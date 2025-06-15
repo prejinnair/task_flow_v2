@@ -1,0 +1,61 @@
+{% extends 'adminpanel/base_admin.html' %}
+{% load static %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-6">
+    <h1 class="text-3xl font-bold text-gray-800 mb-6">Admin Dashboard</h1>
+
+    <!-- Top Stats Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white shadow rounded-xl p-5">
+            <p class="text-gray-500">Total Users</p>
+            <p class="text-2xl font-bold text-blue-600">123</p>
+        </div>
+        <div class="bg-white shadow rounded-xl p-5">
+            <p class="text-gray-500">Total Teams</p>
+            <p class="text-2xl font-bold text-green-600">12</p>
+        </div>
+        <div class="bg-white shadow rounded-xl p-5">
+            <p class="text-gray-500">Total Projects</p>
+            <p class="text-2xl font-bold text-purple-600">24</p>
+        </div>
+        <div class="bg-white shadow rounded-xl p-5">
+            <p class="text-gray-500">Tasks Completed This Week</p>
+            <p class="text-2xl font-bold text-emerald-600">89</p>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div class="bg-white shadow rounded-xl p-6">
+            <h2 class="text-lg font-semibold text-gray-700 mb-4">Quick Actions</h2>
+            <div class="flex flex-col space-y-2">
+                <a href="{% url 'admin_panel:user_create' %}" class="text-blue-600 hover:underline">➕ Create User</a>
+                <a href="{% url 'admin_panel:user_list' %}" class="text-blue-600 hover:underline">👥 Manage Users</a>
+                <a href="{% url 'admin_panel:team_list' %}" class="text-blue-600 hover:underline">👨‍👩‍👧‍👦 Manage Teams</a>
+                <a href="{% url 'admin_panel:project_list' %}" class="text-blue-600 hover:underline">📁 Manage Projects</a>
+            </div>
+        </div>
+
+        <div class="bg-white shadow rounded-xl p-6">
+            <h2 class="text-lg font-semibold text-gray-700 mb-4">Recent Activity</h2>
+            <ul class="text-sm text-gray-600 space-y-2">
+                <li>✅ Task "Design API" marked complete</li>
+                <li>👥 New user "John Doe" added to Team Alpha</li>
+                <li>📁 Project "Migration" was created</li>
+                <li>🔄 Password reset requested by user@example.com</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Task Status Chart (Placeholder) -->
+    <div class="bg-white shadow rounded-xl p-6">
+        <h2 class="text-lg font-semibold text-gray-700 mb-4">Task Status Overview</h2>
+        <div class="h-64 flex items-center justify-center text-gray-400">
+            <!-- Replace with chart later -->
+            [ Task Status Chart Placeholder ]
+        </div>
+    </div>
+</div>
+{% include 'includes/alerts.html' %}
+{% endblock %}

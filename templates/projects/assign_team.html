@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="max-w-3xl mx-auto px-6 py-8 bg-white shadow rounded-lg">
+  <!-- Header -->
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-800">Assign Team to Project</h1>
+    <p class="text-gray-600 mt-1">You're assigning a team to the project: <strong class="text-gray-900">{{ project.name }}</strong></p>
+  </div>
+
+  <!-- Form -->
+  <form method="post" class="space-y-6">
+    {% csrf_token %}
+
+    <!-- Form Fields with Tailwind Styling -->
+    {% for field in form %}
+      <div>
+        <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+          {{ field.label }}
+        </label>
+        {{ field }}
+        {% if field.help_text %}
+          <p class="text-xs text-gray-500 mt-1">{{ field.help_text }}</p>
+        {% endif %}
+        {% if field.errors %}
+          <p class="text-sm text-red-600 mt-1">{{ field.errors|striptags }}</p>
+        {% endif %}
+      </div>
+    {% endfor %}
+
+    <!-- Submit Button -->
+    <div class="pt-4">
+      <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded hover:bg-green-700 transition">
+        <i data-feather="link" class="w-4 h-4"></i>
+        Assign Team
+      </button>
+    </div>
+  </form>
+</div>
+
+{% include 'includes/alerts.html' %}
+{% endblock %}

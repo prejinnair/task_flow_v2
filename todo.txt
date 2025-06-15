@@ -1,0 +1,6 @@
+Along with role permission a manual permission should be implemented like: if manager assigns QA to create and main projects/teams QA should be able to acces the views.
+go back to test cases button
+go to task details
+mark as completed buttonfor tasks
+we can show their working projects in dashboard
+add notifications when a task is assigned for a user

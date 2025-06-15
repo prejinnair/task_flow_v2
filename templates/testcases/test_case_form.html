@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-10 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-2xl mx-auto bg-white border border-gray-200 shadow-lg rounded-lg overflow-hidden">
+
+    <!-- Sticky Header -->
+    <div class="px-6 py-4 border-b bg-gray-100 sticky top-0 z-10">
+      <h2 class="text-xl font-semibold text-gray-800">
+        {{ form.instance.pk|yesno:"Edit Test Case,Add Test Case" }}
+      </h2>
+        <a href="{% url 'tasks:test_case_list' %}" class="text-sm text-blue-600 hover:underline">← Back</a>
+    </div>
+
+    <!-- Scrollable Form Body -->
+    <div class="max-h-[70vh] overflow-y-auto px-6 py-6 space-y-6">
+      <form method="post" class="space-y-5">
+        {% csrf_token %}
+        {% for field in form %}
+          <div>
+            <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+              {{ field.label }}
+            </label>
+            {{ field }}
+            {% if field.help_text %}
+              <p class="text-xs text-gray-500 mt-1">{{ field.help_text }}</p>
+            {% endif %}
+            {% for error in field.errors %}
+              <p class="text-sm text-red-600 mt-1">{{ error }}</p>
+            {% endfor %}
+          </div>
+        {% endfor %}
+        <div class="pt-2">
+          <button type="submit"
+            class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400">
+            Save
+          </button>
+        </div>
+      </form>
+    </div>
+
+  </div>
+</div>
+
+{% include 'includes/alerts.html' %}
+{% endblock %}

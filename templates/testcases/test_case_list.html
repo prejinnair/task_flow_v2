@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-6">
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-3xl font-bold text-gray-800">Test Cases</h1>
+    </div>
+
+    {% if test_cases %}
+    <div class="bg-white shadow-md rounded-lg overflow-hidden border border-gray-200">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-600">Title</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-600">Task</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-600">Status</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-600">Created By</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-600">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for case in test_cases %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 text-gray-800">{{ case.title }}</td>
+                    <td class="px-6 py-4 text-gray-700">{{ case.task.title }}</td>
+                    <td class="px-6 py-4">
+                        <span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded 
+                            {% if case.status == 'pass' %}
+                                bg-green-100 text-green-800
+                            {% elif case.status == 'fail' %}
+                                bg-red-100 text-red-800
+                            {% else %}
+                                bg-gray-100 text-gray-800
+                            {% endif %}">
+                            {{ case.get_status_display|capfirst }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-gray-700">{{ case.created_by }}</td>
+                    <td class="px-6 py-4">
+                        <div class="flex gap-2">
+                            <a href="{% url 'tasks:test_case_detail' case.pk %}" class="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1">
+                                <i data-feather="eye" class="w-4 h-4"></i> View
+                            </a>
+                            <a href="{% url 'tasks:test_case_update' case.pk %}" class="text-green-600 hover:text-green-800 text-sm flex items-center gap-1">
+                                <i data-feather="edit" class="w-4 h-4"></i> Edit
+                            </a>
+                            <a href="{% url 'tasks:test_case_delete' case.pk %}" class="text-red-600 hover:text-red-800 text-sm flex items-center gap-1">
+                                <i data-feather="trash-2" class="w-4 h-4"></i> Delete
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="text-center text-gray-500 mt-10">
+        <p class="text-lg">No test cases found.</p>
+    </div>
+    {% endif %}
+</div>
+
+{% include 'includes/alerts.html' %}
+{% endblock %}

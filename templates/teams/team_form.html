@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-100 py-10 px-4">
+  <div class="max-w-2xl mx-auto bg-white shadow-lg rounded-xl overflow-hidden">
+    
+    <!-- Page Header -->
+    <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+      <h1 class="text-xl font-semibold text-gray-800">
+        {{ form.instance.pk|yesno:"Edit Team,Create Team" }}
+      </h1>
+        <a href="{% url 'projects:team_list' %}" class="text-sm text-blue-600 hover:underline">← Back</a>
+    </div>
+
+    <!-- Alerts -->
+    <div class="px-6 py-4">
+      {% include 'includes/alerts.html' %}
+    </div>
+
+    <!-- Scrollable Form -->
+    <div class="max-h-[60vh] overflow-y-auto px-6 pb-4 space-y-4">
+      <form method="post" class="space-y-6" id="team-form">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <div class="pt-4">
+          <button type="submit"
+            class="w-full bg-blue-600 text-white font-medium py-2 px-4 rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+            Save Team
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    new TomSelect('select.tom-select', {
+      plugins: ['remove_button'],
+      create: false,
+      maxItems: null,
+      placeholder: 'Select one or more...',
+      allowEmptyOption: false
+    });
+  });
+</script>

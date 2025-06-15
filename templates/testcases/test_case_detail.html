@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Test Case: {{ test_case.title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto px-6 py-8 bg-white shadow rounded-lg h-[85vh] flex flex-col">
+    <!-- Header & Action Buttons -->
+    <div class="flex items-center justify-between mb-4 flex-shrink-0">
+        <h1 class="text-3xl font-semibold text-gray-800">Test Case Details</h1>
+        <div class="space-x-2">
+            <a href="{% url 'tasks:test_case_update' test_case.pk %}" class="inline-flex items-center px-4 py-2 text-sm font-medium bg-green-600 text-white rounded hover:bg-green-700 transition">
+                <i data-feather="edit" class="w-4 h-4 mr-1"></i>Edit
+            </a>
+            <a href="{% url 'tasks:test_case_delete' test_case.pk %}" class="inline-flex items-center px-4 py-2 text-sm font-medium bg-red-600 text-white rounded hover:bg-red-700 transition">
+                <i data-feather="trash-2" class="w-4 h-4 mr-1"></i>Delete
+            </a>
+            <a href="{% url 'tasks:test_case_list_by_task' test_case.task.id %}" class="inline-flex items-center px-4 py-2 text-sm font-medium bg-gray-600 text-white rounded hover:bg-gray-700 transition">
+                <i data-feather="arrow-left" class="w-4 h-4 mr-1"></i>Back to Test Cases
+            </a>
+<a href="{% url 'tasks:task_detail' test_case.task.id %}" class="inline-flex items-center px-4 py-2 text-sm font-medium bg-gray-600 text-white rounded hover:bg-gray-700 transition">
+    <i data-feather="arrow-right" class="w-4 h-4 mr-1"></i>Go to Task Details
+</a>
+
+        </div>
+    </div>
+
+    <!-- Scrollable Content -->
+    <div class="overflow-y-auto pr-2 flex-grow border-t border-gray-200 pt-4">
+        <dl class="divide-y divide-gray-200 space-y-4 text-sm text-gray-800">
+            <div>
+                <dt class="font-semibold text-gray-600">Title</dt>
+                <dd class="mt-1 text-lg text-gray-900">{{ test_case.title }}</dd>
+            </div>
+
+            <div>
+                <dt class="font-semibold text-gray-600">Task</dt>
+                <dd class="mt-1">
+                    <a href="{% url 'tasks:task_detail' test_case.task.id %}" class="text-blue-600 hover:underline">
+                        {{ test_case.task.title }}
+                    </a>
+                </dd>
+            </div>
+
+            <div>
+                <dt class="font-semibold text-gray-600">Description</dt>
+                <dd class="mt-1 whitespace-pre-line">{{ test_case.description }}</dd>
+            </div>
+
+            <div>
+                <dt class="font-semibold text-gray-600">Expected Result</dt>
+                <dd class="mt-1 whitespace-pre-line text-green-800">{{ test_case.expected_result }}</dd>
+            </div>
+
+            <div>
+                <dt class="font-semibold text-gray-600">Actual Result</dt>
+                <dd class="mt-1 whitespace-pre-line text-blue-800">{{ test_case.actual_result|default:"—" }}</dd>
+            </div>
+
+            <div>
+                <dt class="font-semibold text-gray-600">Status</dt>
+                <dd class="mt-1">
+                    <span class="inline-block px-3 py-1 text-sm rounded-full 
+                        {% if test_case.status == 'pass' %}
+                            bg-green-100 text-green-800
+                        {% elif test_case.status == 'fail' %}
+                            bg-red-100 text-red-800
+                        {% else %}
+                            bg-gray-100 text-gray-800
+                        {% endif %}">
+                        {{ test_case.get_status_display }}
+                    </span>
+                </dd>
+            </div>
+
+            <div>
+                <dt class="font-semibold text-gray-600">Created By</dt>
+                <dd class="mt-1">{{ test_case.created_by.get_full_name|default:test_case.created_by.username }}</dd>
+            </div>
+
+            <div>
+                <dt class="font-semibold text-gray-600">Created At</dt>
+                <dd class="mt-1">{{ test_case.created_at|date:"M d, Y H:i" }}</dd>
+            </div>
+
+            <div>
+                <dt class="font-semibold text-gray-600">Last Updated</dt>
+                <dd class="mt-1">{{ test_case.updated_at|date:"M d, Y H:i" }}</dd>
+            </div>
+        </dl>
+    </div>
+</div>
+
+{% include 'includes/alerts.html' %}
+{% endblock %}

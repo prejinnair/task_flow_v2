@@ -1,0 +1,92 @@
+{% load static %}
+<!--Main Wrapper-->
+<div class="wrapper">
+<!-- Header Start -->
+<header id="header">
+    <div class="main-header">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-lg-8 col-md-8 col-sm-12 col-xs-12">
+                    <div class="logo">
+                        <figure>
+                            <a href="{% url 'home' %}" class="light-logo">
+                                <img src="{% static 'logo/foodOnlineLogo.png' %}" alt="FoodBakery" width="250px">
+                            </a>
+                        </figure>
+                    </div>
+        
+                    <div class="main-location ml-5">
+                        <ul>
+                            <li class="location-has-children choose-location">
+                                <form action="#">
+                                    <input type="text" value="" name="location" placeholder="Your current location" autocomplete="off" id="location">
+                                    <span id="foodbakery_radius_location_open" class="foodbakery-radius-location" onclick="getLocation()"><i class="icon-target5"></i></span>
+                                </form>
+                                
+                            </li>
+                        </ul>
+                        </div>
+                </div>
+                <div class="col-lg-4 col-md-4 col-sm-12 col-xs-12">
+                    <div class="login-option">
+                        {% if user.is_authenticated %}
+                        <a href="{% url 'cart' %}">
+                            <i class="fa fa-shopping-cart text-danger" style="font-size: 20px;">
+                                <span class="badge badge-warning" id="cart-count" style="border-radius: 50px; position: relative; bottom: 10px; left: -5px;">{{ cart_count }}</span>
+                            </i>
+                        </a>
+                        {% endif %}
+                        <a href="{% url 'marketplace' %}" class="btn btn-outline-danger text-uppercase font-weight-bold">Market Place</a>
+                        {% if user.is_authenticated %}
+                        <a class="cs-color cs-popup-joinus-btn login-popup" data-toggle="modal" href="{% url 'my-account' %}">My Account</a>
+                        <a class="cs-color cs-popup-joinus-btn login-popup text-danger" data-toggle="modal" href="{% url 'logout' %}">Logout</a>
+                        {% else %}
+                        <a class="cs-color cs-popup-joinus-btn login-popup" data-toggle="modal" href="{% url 'login' %}">Login</a>/<span> <a href="{% url 'register-user' %}" class="cs-color cs-popup-joinus-btn login-popup ml-0">Register</a></span><a class="get-start-btn" href="{% url 'register-vendor' %}">
+                            Register
+                            Restaurant </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+<!-- Header End -->
+<script>
+    const x = document.getElementById("location");
+    // var location = sessionStorage.getItem('location')
+    // if (location != ''){
+    //     x.value = location
+    // }
+    function getLocation() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(showPosition);
+      } else {
+        x.innerHTML = "Geolocation is not supported by this browser.";
+      }
+    }
+    function showPosition(position) {
+      var lat = position.coords.latitude;
+      var lng = position.coords.longitude;
+      x.value = lat + ", " + lng;
+    // hit ajax request to google api for getting location data using lat and lng
+        GOOGLE_API_KEY = "{{ GOOGLE_API_KEY }}"
+        var url = "https://maps.googleapis.com/maps/api/geocode/json?latlng=" + lat + "," + lng + "&key=" + GOOGLE_API_KEY;
+    function error() {
+      alert("Sorry, no position available.");
+    }
+    $.ajax({
+        url: url,
+        type: 'GET',
+        success: function(response){
+            // var location = response.results[0].formatted_address
+            // x.value = location
+            // sessionStorage.setItem('location', location)
+            window.location = '?lat='+lat+'&lng='+lng
+        }
+
+    })
+}
+    </script>
+
+

@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-6 py-8">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-gray-800">All Projects</h1>
+        <a href="{% url 'projects:project_create' %}" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700 focus:ring-2 focus:ring-blue-400 transition">
+            <i data-feather="plus" class="w-4 h-4"></i> Add New Project
+        </a>
+    </div>
+
+    <!-- Table -->
+    <div class="overflow-x-auto bg-white shadow rounded-lg">
+        <table class="min-w-full text-sm table-auto">
+            <thead class="bg-gray-100 text-gray-700">
+                <tr>
+                    <th class="px-6 py-3 text-left font-medium">Project Name</th>
+                    <th class="px-6 py-3 text-left font-medium">Teams</th>
+                    <th class="px-6 py-3 text-left font-medium">Status</th>
+                    <th class="px-6 py-3 text-left font-medium">Owner</th>
+                    <th class="px-6 py-3 text-left font-medium">Created</th>
+                    <th class="px-6 py-3 text-left font-medium">Updated</th>
+                    <th class="px-6 py-3 text-left font-medium">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                {% for project in projects %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">
+                        <a href="{% url 'projects:project_detail' project.pk %}" class="hover:underline">{{ project.name }}</a>
+                        <div class="text-xs text-gray-500">{{ project.description|truncatechars:80 }}</div>
+                    </td>
+                    
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% if project.teams.exists %}
+                            {% for team in project.teams.all %}
+                                <span class="inline-block bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded mr-1">{{ team.name }}</span>
+                            {% endfor %}
+                        {% else %}
+                            <span class="text-gray-400 italic">No teams assigned</span>
+                        {% endif %}
+                    </td>
+
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="inline-block px-2 py-1 text-xs rounded font-semibold
+                            {% if project.status == 'active' %} bg-green-100 text-green-700
+                            {% elif project.status == 'completed' %} bg-blue-100 text-blue-700
+                            {% else %} bg-gray-100 text-gray-700 {% endif %}">
+                            {{ project.get_status_display }}
+                        </span>
+                    </td>
+
+                    <td class="px-6 py-4 whitespace-nowrap">{{ project.created_by }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-gray-600">{{ project.created_at|date:"Y-m-d" }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-gray-600">{{ project.updated_at|date:"Y-m-d" }}</td>
+                    
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex flex-wrap gap-2">
+                            <a href="{% url 'projects:project_detail' project.pk %}" class="inline-flex items-center gap-1 px-3 py-1 text-sm text-blue-600 border border-blue-100 rounded hover:bg-blue-50 transition">
+                                <i data-feather="eye" class="w-4 h-4"></i> View
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center text-gray-500 py-6">No projects found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% include 'includes/alerts.html' %}
+{% endblock %}

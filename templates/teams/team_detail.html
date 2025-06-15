@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto px-6 py-8 bg-white rounded-lg shadow-md mt-6">
+    <div class="flex justify-between items-start mb-6">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">Team: {{ team.name }}</h1>
+            <p class="text-sm text-gray-500">Created on {{ team.created_at|date:"Y-m-d" }} by <span class="font-semibold">{{ team.created_by }}</span></p>
+        </div>
+        <div class="flex gap-3">
+            <a href="{% url 'projects:team_update' team.pk %}" class="inline-flex items-center gap-1 px-4 py-2 text-sm bg-yellow-500 text-white rounded hover:bg-yellow-600 transition">
+                <i data-feather="edit" class="w-4 h-4"></i> Edit Team
+            </a>
+            <a href="{% url 'projects:team_delete' team.pk %}" class="inline-flex items-center gap-1 px-4 py-2 text-sm bg-red-500 text-white rounded hover:bg-red-600 transition">
+                <i data-feather="trash-2" class="w-4 h-4"></i> Delete Team
+            </a>
+        </div>
+    </div>
+
+    <div class="mb-6">
+        <h2 class="text-xl font-semibold text-gray-700 mb-2">Team Overview</h2>
+        <div class="space-y-2 text-gray-700 text-sm">
+            <p><strong>Description:</strong> {{ team.description|default:"No description provided." }}</p>
+            <p><strong>Status:</strong>
+                {% if team.status == "active" %}
+                    <span class="px-2 py-1 bg-green-100 text-green-700 rounded text-xs">Active</span>
+                {% elif team.status == "inactive" %}
+                    <span class="px-2 py-1 bg-red-100 text-red-700 rounded text-xs">Inactive</span>
+                {% else %}
+                    <span class="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs">Unknown</span>
+                {% endif %}
+            </p>
+            <p><strong>Total Members:</strong> {{ team.members.count }}</p>
+        </div>
+    </div>
+
+    <div>
+        <h2 class="text-xl font-semibold text-gray-700 mb-3">Team Members</h2>
+        {% if team.members.exists %}
+        <ul class="list-disc list-inside space-y-1 text-gray-700 text-sm">
+            {% for user in team.members.all %}
+                <li>{{ user.get_full_name|default:user.username }} <span class="text-gray-500 text-xs">({{ user.email }})</span></li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-gray-500 text-sm italic">No members assigned to this team yet.</p>
+        {% endif %}
+    </div>
+</div>
+
+{% include 'includes/alerts.html' %}
+{% endblock %}

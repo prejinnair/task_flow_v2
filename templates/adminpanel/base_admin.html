@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% block title %}Admin Dashboard | TaskFlow{% endblock %}</title>
+
+    <!-- Tailwind CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Feather icons -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+
+    <!-- Top navbar -->
+    <header class="bg-white shadow flex items-center justify-between px-6 h-16">
+        <div class="flex items-center space-x-3">
+            <button id="sidebarToggle" class="md:hidden focus:outline-none">
+                <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" stroke-width="2"
+                    viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="3" y1="12" x2="21" y2="12" />
+                    <line x1="3" y1="6" x2="21" y2="6" />
+                    <line x1="3" y1="18" x2="21" y2="18" />
+                </svg>
+            </button>
+            <a href="{% url 'admin_panel:dashboard' %}" class="text-xl font-semibold text-blue-600 flex items-center gap-1">
+                <i data-feather="layers"></i> TaskFlow Admin
+            </a>
+        </div>
+<!-- 
+        <div class="relative group inline-block">
+            <button class="flex items-center gap-2 focus:outline-none">
+                <img src="{{ user_profile.avatar.url|default:'/static/images/default-avatar.png' }}" alt="Avatar" 
+                     class="w-8 h-8 rounded-full object-cover border border-gray-300" />
+                <span class="hidden sm:inline-block font-medium text-gray-700">{{ user.name|default:user.email }}</span>
+                <i data-feather="chevron-down" class="w-4 h-4 text-gray-600"></i>
+            </button>
+            <div
+                class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity duration-150"
+            >
+                <a href="{% url 'accounts:profile' %}" class="block px-4 py-2 hover:bg-gray-100">Profile</a>
+                <hr class="border-t" />
+                <a href="{% url 'accounts:logout' %}" class="block px-4 py-2 text-red-600 hover:bg-gray-100">Logout</a>
+            </div>
+        </div> -->
+
+<div x-data="{ open: false }" class="relative inline-block text-left">
+    <button @click="open = !open" class="flex items-center gap-2 focus:outline-none hover:text-blue-600">
+<img src="{% if user.profile.avatar %}{{ user.profile.avatar.url }}{% else %}/static/images/default-avatar.png{% endif %}" alt="Avatar" class="w-8 h-8 rounded-full object-cover border border-gray-300">       
+        <span class="hidden sm:inline-block font-medium text-gray-700">{{ user.name|default:user.email }}</span>
+        <i data-feather="chevron-down" class="w-4 h-4 text-gray-600"></i>
+    </button>
+
+    <div
+        x-show="open"
+        @click.outside="open = false"
+        x-transition
+        class="absolute right-0 mt-2 w-48 bg-white border rounded shadow-lg z-50"
+    >
+        <a href="{% url 'accounts:profile' %}" class="block px-4 py-2 hover:bg-gray-100">Profile</a>
+        <hr class="border-t" />
+        <a href="{% url 'accounts:logout' %}" class="block px-4 py-2 text-red-600 hover:bg-gray-100">Logout</a>
+    </div>
+</div>
+
+    </header>
+
+    <div class="flex flex-1 overflow-hidden">
+        <!-- Sidebar -->
+        <aside id="sidebar" class="bg-white w-64 border-r border-gray-200 hidden md:block overflow-y-auto">
+            <nav class="py-6 flex flex-col space-y-1">
+                <a href="{% url 'admin_panel:dashboard' %}" class="px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center gap-3
+                    {% if request.resolver_match.url_name == 'dashboard' %} bg-blue-100 text-blue-700 font-semibold {% endif %}">
+                    <i data-feather="home" class="w-5 h-5"></i> Dashboard
+                </a>
+                <a href="{% url 'admin_panel:user_list' %}" class="px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center gap-3
+                    {% if request.resolver_match.url_name == 'user_list' %} bg-blue-100 text-blue-700 font-semibold {% endif %}">
+                    <i data-feather="users" class="w-5 h-5"></i> Users
+                </a>
+                <a href="{% url 'admin_panel:team_list' %}" class="px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center gap-3
+                    {% if request.resolver_match.url_name == 'team_list' %} bg-blue-100 text-blue-700 font-semibold {% endif %}">
+                    <i data-feather="layers" class="w-5 h-5"></i> Teams
+                </a>
+                <a href="{% url 'admin_panel:project_list' %}" class="px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center gap-3
+                    {% if request.resolver_match.url_name == 'project_list' %} bg-blue-100 text-blue-700 font-semibold {% endif %}">
+                    <i data-feather="briefcase" class="w-5 h-5"></i> Projects
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main content -->
+        <main class="flex-1 overflow-y-auto p-6">
+            {% block content %}
+            <!-- Page-specific content goes here -->
+            {% endblock %}
+        </main>
+    </div>
+
+    <footer class="bg-white text-center py-4 border-t border-gray-200 text-sm text-gray-500">
+        © {{ year|default:"2025" }} TaskFlow. Built with ❤️ by Prejin.
+    </footer>
+
+    <script>
+        feather.replace();
+
+        // Sidebar toggle on small screens
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const sidebar = document.getElementById('sidebar');
+
+        sidebarToggle?.addEventListener('click', () => {
+            sidebar.classList.toggle('hidden');
+        });
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

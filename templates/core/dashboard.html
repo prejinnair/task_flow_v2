@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | TaskFlow{% endblock %}
+
+{% block content %}
+<div class="px-6 py-8">
+  <h1 class="text-3xl font-bold mb-6">Welcome back, {{ user.name }}</h1>
+
+  <!-- Stats Cards -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+    <div class="bg-white rounded-2xl shadow p-6">
+      <h3 class="text-sm text-gray-500">Tasks Assigned</h3>
+      <p class="text-3xl font-bold text-blue-600 mt-2">18</p>
+    </div>
+    <div class="bg-white rounded-2xl shadow p-6">
+      <h3 class="text-sm text-gray-500">Completed</h3>
+      <p class="text-3xl font-bold text-green-600 mt-2">12</p>
+    </div>
+    <div class="bg-white rounded-2xl shadow p-6">
+      <h3 class="text-sm text-gray-500">Pending PRs</h3>
+      <p class="text-3xl font-bold text-yellow-500 mt-2">4</p>
+    </div>
+    <div class="bg-white rounded-2xl shadow p-6">
+      <h3 class="text-sm text-gray-500">Deployed</h3>
+      <p class="text-3xl font-bold text-purple-600 mt-2">6</p>
+    </div>
+  </div>
+
+  <!-- Recent Activity Table -->
+  <div>
+    <h2 class="text-xl font-semibold mb-4">Recent Activities</h2>
+    <div class="bg-white rounded-lg shadow overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Task</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Updated</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          <tr>
+            <td class="px-6 py-4">Fix login bug</td>
+            <td class="px-6 py-4 text-yellow-600 font-semibold">In Review</td>
+            <td class="px-6 py-4 text-sm text-gray-500">2 hours ago</td>
+          </tr>
+          <tr>
+            <td class="px-6 py-4">Add team filters</td>
+            <td class="px-6 py-4 text-green-600 font-semibold">Completed</td>
+            <td class="px-6 py-4 text-sm text-gray-500">Yesterday</td>
+          </tr>
+          <tr>
+            <td class="px-6 py-4">PR tracking module</td>
+            <td class="px-6 py-4 text-blue-600 font-semibold">In Progress</td>
+            <td class="px-6 py-4 text-sm text-gray-500">Today</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% include 'includes/alerts.html' %}
+{% endblock %}

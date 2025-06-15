@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-xl mx-auto bg-white p-6 rounded shadow">
+    <h2 class="text-xl font-semibold mb-4">Delete User</h2>
+    <p>Are you sure you want to delete the User "{{ user.name }}"?</p>
+    <form method="post" class="mt-4">
+        {% csrf_token %}
+        <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Confirm Delete</button>
+        <a href="{% url 'admin_panel:user_list' %}" class="ml-2 text-gray-600 hover:underline">Cancel</a>
+    </form>
+</div>
+{% include 'includes/alerts.html' %}
+
+{% endblock %}

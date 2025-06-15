@@ -1,0 +1,223 @@
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from .models import Task, Comment, Label, TestCase
+from .forms import TaskForm, CommentForm, LabelForm, TestCaseForm
+from projects.models import Project
+from accounts.models import User
+from django.db.models import Q
+from accounts.decorators import permission_required
+
+@login_required
+def task_list(request):
+    user = request.user
+
+    if user.role in [0, 1, 2]:  # Admin or Manager
+        tasks = Task.objects.all()
+        involved_projects = Project.objects.all()
+        involved_users = User.objects.filter(teams__projects__in=involved_projects).distinct()
+    else:
+        # Teams the user belongs to
+        user_teams = user.teams.all()
+
+        # Projects linked to user's teams or managed by the user
+        involved_projects = Project.objects.filter(
+            Q(teams__in=user_teams) |
+            Q(managed_by=user)
+        ).distinct()
+
+        # Only tasks in involved projects
+        tasks = Task.objects.filter(project__in=involved_projects)
+
+        # Only users in the teams assigned to those projects
+        involved_users = User.objects.filter(teams__projects__in=involved_projects).distinct()
+
+    # Apply filters
+    search = request.GET.get("search", "")
+    project = request.GET.get("project")
+    assigned_to = request.GET.get("assigned_to")
+    priority = request.GET.get("priority")
+    status = request.GET.get("status")
+
+    if search:
+        tasks = tasks.filter(title__icontains=search)
+    if project:
+        tasks = tasks.filter(project_id=project)
+    if assigned_to:
+        tasks = tasks.filter(assigned_to_id=assigned_to)
+    if priority:
+        tasks = tasks.filter(priority=priority)
+    if status:
+        tasks = tasks.filter(status=status)
+
+    context = {
+        "tasks": tasks,
+        "projects": involved_projects,
+        "users": involved_users,
+        "status_choices": Task.STATUS_CHOICES,
+        "priority_choices": Task.PRIORITY_CHOICES,
+    }
+    return render(request, "tasks/task_list.html", context)
+
+
+@login_required
+def task_detail(request, pk):
+    task = get_object_or_404(Task, pk=pk)
+    comments = Comment.objects.filter(task=task).select_related('author')
+    test_cases = TestCase.objects.filter(task=task)
+    return render(request, 'tasks/task_detail.html', {
+        'task': task,
+        'comments': comments,
+        'test_cases': test_cases
+    })
+
+@login_required
+def task_create(request):
+    if request.method == 'POST':
+        form = TaskForm(request.POST, user=request.user)
+        files = request.FILES.getlist('attachments')
+        if form.is_valid():
+            task = form.save(commit=False)
+            task.created_by = request.user
+            task.save()
+            form.save_m2m()
+            for file in files:
+                task.attachments.create(file=file, uploaded_by=request.user)
+            messages.success(request, 'Task created successfully.')
+            return redirect('tasks:task_detail', pk=task.pk)
+    else:
+        form = TaskForm(user=request.user)
+    return render(request, 'tasks/task_form.html', {'form': form})
+
+@login_required
+def task_update(request, pk):
+    task = get_object_or_404(Task, pk=pk)
+    if request.method == 'POST':
+        form = TaskForm(request.POST, instance=task)
+        files = request.FILES.getlist('attachments')
+        if form.is_valid():
+            form.save()
+            for file in files:
+                task.attachments.create(file=file, uploaded_by=request.user)
+            messages.success(request, 'Task updated successfully.')
+            return redirect('tasks:task_detail', pk=task.pk)
+    else:
+        form = TaskForm(instance=task)
+    return render(request, 'tasks/task_form.html', {'form': form})
+
+@login_required
+@permission_required('delete_tasks')
+def task_delete(request, pk):
+    task = get_object_or_404(Task, pk=pk)
+    if request.method == 'POST':
+        task.delete()
+        messages.success(request, 'Task deleted successfully.')
+        return redirect('tasks:task_list')
+    return render(request, 'tasks/task_confirm_delete.html', {'task': task})
+
+@login_required
+def add_comment(request, task_id):
+    task = get_object_or_404(Task, pk=task_id)
+    if request.method == 'POST':
+        form = CommentForm(request.POST)
+        if form.is_valid():
+            comment = form.save(commit=False)
+            comment.task = task
+            comment.author = request.user
+            comment.save()
+            messages.success(request, 'Comment added successfully.')
+            return redirect('tasks:task_detail', pk=task_id)
+    else:
+        form = CommentForm()
+    return render(request, 'tasks/comment_form.html', {'form': form})
+
+@login_required
+def label_list(request):
+    labels = Label.objects.all()
+    return render(request, 'tasks/label_list.html', {'labels': labels})
+
+@login_required
+def label_create(request):
+    if request.method == 'POST':
+        form = LabelForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Label created successfully.')
+            return redirect('tasks:label_list')
+    else:
+        form = LabelForm()
+    return render(request, 'tasks/label_form.html', {'form': form})
+
+
+@login_required
+def test_case_list(request):
+    test_cases = TestCase.objects.select_related('task').all()
+    return render(request, 'testcases/test_case_list.html', {'test_cases': test_cases})
+
+@login_required
+def test_case_list_by_task(request, task_id):
+    task = get_object_or_404(Task, pk=task_id)
+    test_cases = TestCase.objects.filter(task=task).select_related('created_by')
+    return render(request, 'testcases/test_case_list.html', {'test_cases': test_cases, 'task': task})
+
+@login_required
+def test_case_detail(request, pk):
+    test_case = get_object_or_404(TestCase, pk=pk)
+    return render(request, 'testcases/test_case_detail.html', {'test_case': test_case})
+
+@login_required
+def test_case_create(request, task_id):
+    if request.method == 'POST':
+        form = TestCaseForm(request.POST)
+        if form.is_valid():
+            test_case = form.save(commit=False)
+            test_case.created_by = request.user
+            test_case.save()
+            messages.success(request, 'Test case created successfully.')
+            return redirect('tasks:test_case_detail', pk=test_case.pk)
+    else:
+        initial_data = {'task': task_id} if task_id else {}
+        form = TestCaseForm(initial=initial_data)
+    return render(request, 'testcases/test_case_form.html', {'form': form, 'title': 'Create Test Case'})
+
+@login_required
+def test_case_update(request, pk):
+    test_case = get_object_or_404(TestCase, pk=pk)
+    if request.method == 'POST':
+        form = TestCaseForm(request.POST, instance=test_case)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Test case updated successfully.')
+            return redirect('tasks:test_case_detail', pk=test_case.pk)
+    else:
+        form = TestCaseForm(instance=test_case)
+    return render(request, 'testcases/test_case_form.html', {'form': form, 'title': 'Update Test Case'})
+
+@login_required
+def test_case_delete(request, pk):
+    test_case = get_object_or_404(TestCase, pk=pk)
+    if request.method == 'POST':
+        test_case.delete()
+        messages.success(request, 'Test case deleted successfully.')
+        return redirect('tasks:test_case_list')
+    return render(request, 'testcases/test_case_confirm_delete.html', {'test_case': test_case})
+
+
+from django.utils.timezone import now
+
+@login_required
+def mark_task_completed(request, task_id):
+    task = get_object_or_404(Task, id=task_id)
+
+    # Permission check
+    if request.user != task.assigned_to and not request.user.is_superuser and request.user != task.created_by:
+        messages.error(request, "You don't have permission to mark this task as completed.")
+        return redirect('tasks:task_list')
+
+    task.status = 'done'
+    task.completed_at = now()
+    task.updated_by = request.user
+    task.save(update_fields=['status', 'completed_at', 'updated_by'])
+
+    messages.success(request, f"Task '{task.title}' marked as completed.")
+    return redirect('tasks:task_list')

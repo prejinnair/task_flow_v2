@@ -1,0 +1,252 @@
+📁 templates/tasks/
+
+
+📄 task_list.html
+--------------------------------------------------
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mx-auto py-6">
+    <h1 class="text-2xl font-bold mb-4">Task List</h1>
+    <a href="{% url 'task_create' %}" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Create Task</a>
+    <div class="mt-6 grid grid-cols-1 gap-4">
+        {% for task in tasks %}
+        <div class="bg-white shadow rounded p-4 border">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h2 class="text-xl font-semibold">{{ task.title }}</h2>
+                    <p class="text-gray-600">Project: {{ task.project.name }}</p>
+                </div>
+                <div>
+                    <a href="{% url 'task_detail' task.pk %}" class="text-blue-500 hover:underline">View</a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <p>No tasks available.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+
+📄 task_detail.html
+--------------------------------------------------
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mx-auto py-6">
+    <div class="bg-white shadow rounded p-6">
+        <h1 class="text-2xl font-bold">{{ task.title }}</h1>
+        <p class="text-gray-700 mt-2">{{ task.description }}</p>
+        <p class="mt-4 text-sm">Status: <strong>{{ task.status }}</strong> | Priority: {{ task.priority }}</p>
+        <p class="mt-2 text-sm">Assigned to: {{ task.assigned_to }}</p>
+        {% if task.github_issue_url %}<p class="text-sm text-blue-600">Issue: <a href="{{ task.github_issue_url }}" target="_blank">GitHub</a></p>{% endif %}
+        {% if task.github_pr_url %}<p class="text-sm text-green-600">PR: <a href="{{ task.github_pr_url }}" target="_blank">GitHub</a></p>{% endif %}
+
+        <div class="mt-6">
+            <h2 class="text-lg font-semibold mb-2">Comments</h2>
+            {% for comment in task.comments.all %}
+                <div class="border-t py-2">
+                    <p><strong>{{ comment.author }}</strong>: {{ comment.text }}</p>
+                    <p class="text-sm text-gray-500">{{ comment.timestamp }}</p>
+                </div>
+            {% empty %}
+                <p>No comments yet.</p>
+            {% endfor %}
+
+            <form method="post" class="mt-4">
+                {% csrf_token %}
+                {{ comment_form.as_p }}
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Add Comment</button>
+            </form>
+        </div>
+
+        <div class="mt-6">
+            <h2 class="text-lg font-semibold mb-2">Test Cases</h2>
+            {% for test_case in task.test_cases.all %}
+                <div class="border p-2 rounded mb-2">
+                    <p class="font-semibold">{{ test_case.title }}</p>
+                    <p class="text-sm text-gray-600">{{ test_case.description }}</p>
+                    <p class="text-sm">Status: {{ test_case.status }}</p>
+                </div>
+            {% empty %}
+                <p>No test cases added.</p>
+            {% endfor %}
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+
+📄 task_form.html
+--------------------------------------------------
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mx-auto py-6">
+    <div class="bg-white shadow rounded p-6 max-w-xl mx-auto">
+        <h1 class="text-xl font-bold mb-4">{{ form_title }}</h1>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="mt-4 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Submit</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+
+📄 label_form.html
+--------------------------------------------------
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mx-auto py-6">
+    <div class="bg-white shadow rounded p-6 max-w-xl mx-auto">
+        <h1 class="text-xl font-bold mb-4">Create/Edit Label</h1>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="mt-4 bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">Save Label</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+
+📄 test_case_form.html
+--------------------------------------------------
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mx-auto py-6">
+    <div class="bg-white shadow rounded p-6 max-w-xl mx-auto">
+        <h1 class="text-xl font-bold mb-4">Add Test Case</h1>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="mt-4 bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700">Add</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+
+<!-- tasks/test_case_list.html -->
+{% extends 'base.html' %}
+{% block content %}
+<div class="max-w-4xl mx-auto mt-10">
+    <h2 class="text-2xl font-bold mb-6">Test Cases</h2>
+    <a href="{% url 'test_case_create' task.id %}" class="mb-4 inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Add Test Case</a>
+    <div class="bg-white shadow rounded-lg p-6">
+        {% for case in test_cases %}
+        <div class="border-b py-4">
+            <h3 class="text-lg font-semibold">{{ case.title }}</h3>
+            <p class="text-gray-700">{{ case.description }}</p>
+            <p class="text-sm text-gray-500">Status: {{ case.status }} | Created by: {{ case.created_by }}</p>
+            <div class="mt-2 space-x-2">
+                <a href="{% url 'test_case_update' case.id %}" class="text-blue-600 hover:underline">Edit</a>
+                <a href="{% url 'test_case_delete' case.id %}" class="text-red-600 hover:underline">Delete</a>
+            </div>
+        </div>
+        {% empty %}
+        <p>No test cases found.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+<!-- tasks/test_case_form.html -->
+{% extends 'base.html' %}
+{% block content %}
+<div class="max-w-2xl mx-auto mt-10">
+    <h2 class="text-2xl font-bold mb-6">{{ form.instance.pk|yesno:"Edit Test Case,Add Test Case" }}</h2>
+    <form method="post" class="bg-white p-6 rounded-lg shadow">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Save</button>
+    </form>
+</div>
+{% endblock %}
+
+<!-- tasks/test_case_confirm_delete.html -->
+{% extends 'base.html' %}
+{% block content %}
+<div class="max-w-xl mx-auto mt-10">
+    <div class="bg-white p-6 rounded shadow">
+        <h2 class="text-xl font-semibold mb-4">Confirm Delete</h2>
+        <p>Are you sure you want to delete the test case "<strong>{{ test_case.title }}</strong>"?</p>
+        <form method="post" class="mt-4">
+            {% csrf_token %}
+            <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">Yes, Delete</button>
+            <a href="{% url 'task_detail' test_case.task.id %}" class="ml-2 text-gray-600 hover:underline">Cancel</a>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+
+<!-- templates/testcases/test_case_list.html -->
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-6">
+    <h1 class="text-3xl font-bold mb-4">Test Cases</h1>
+
+    <a href="{% url 'test_case_create' %}" class="mb-4 inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+        + Add Test Case
+    </a>
+
+    {% if test_cases %}
+    <div class="bg-white shadow-md rounded-lg overflow-hidden">
+        <table class="w-full table-auto">
+            <thead class="bg-gray-100">
+                <tr>
+                    <th class="px-4 py-2 text-left">Title</th>
+                    <th class="px-4 py-2 text-left">Task</th>
+                    <th class="px-4 py-2 text-left">Status</th>
+                    <th class="px-4 py-2 text-left">Created By</th>
+                    <th class="px-4 py-2 text-left">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for case in test_cases %}
+                <tr class="border-b hover:bg-gray-50">
+                    <td class="px-4 py-2">{{ case.title }}</td>
+                    <td class="px-4 py-2">{{ case.task.title }}</td>
+                    <td class="px-4 py-2">{{ case.status }}</td>
+                    <td class="px-4 py-2">{{ case.created_by }}</td>
+                    <td class="px-4 py-2">
+                        <a href="{% url 'test_case_detail' case.pk %}" class="text-blue-600 hover:underline">View</a> |
+                        <a href="{% url 'test_case_update' case.pk %}" class="text-green-600 hover:underline">Edit</a> |
+                        <a href="{% url 'test_case_delete' case.pk %}" class="text-red-600 hover:underline">Delete</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="text-gray-600">No test cases found.</p>
+    {% endif %}
+</div>
+{% endblock %}
+
+<!-- templates/testcases/test_case_detail.html -->
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-6 bg-white shadow rounded">
+    <h1 class="text-2xl font-bold mb-4">{{ test_case.title }}</h1>
+
+    <p><strong>Task:</strong> {{ test_case.task.title }}</p>
+    <p><strong>Description:</strong> {{ test_case.description|linebreaks }}</p>
+    <p><strong>Expected Result:</strong> {{ test_case.expected_result }}</p>
+    <p><strong>Actual Result:</strong> {{ test_case.actual_result }}</p>
+    <p><strong>Status:</strong> {{ test_case.status }}</p>
+    <p><strong>Created By:</strong> {{ test_case.created_by }}</p>
+    <p><strong>Created At:</strong> {{ test_case.created_at|date:"M d, Y H:i" }}</p>
+    <p><strong>Updated At:</strong> {{ test_case.updated_at|date:"M d, Y H:i" }}</p>
+
+    <div class="mt-6 space-x-4">
+        <a href="{% url 'test_case_update' test_case.pk %}" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Edit</a>
+        <a href="{% url 'test_case_delete' test_case.pk %}" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Delete</a>
+        <a href="{% url 'test_case_list' %}" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">Back</a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-10 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-2xl mx-auto bg-white border border-gray-200 shadow-lg rounded-lg overflow-hidden">
+
+    <!-- Sticky Header -->
+    <div class="px-6 py-4 border-b bg-gray-100 sticky top-0 z-10 flex justify-between items-center">
+      <h1 class="text-xl font-semibold text-gray-800">
+        {{ form.instance.pk|yesno:"Edit Task,Create Task" }}
+      </h1>
+      <a href="{% url 'tasks:task_list' %}" class="text-sm text-blue-600 hover:underline">← Back</a>
+    </div>
+
+    <!-- Scrollable Form Body -->
+    <div class="max-h-[70vh] overflow-y-auto px-6 py-6 space-y-6">
+      <form method="post" enctype="multipart/form-data" class="space-y-5">
+        {% csrf_token %}
+        {% for field in form %}
+          <div>
+            <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+              {{ field.label }}
+            </label>
+            {{ field }}
+            {% if field.help_text %}
+              <p class="text-xs text-gray-500 mt-1">{{ field.help_text }}</p>
+            {% endif %}
+            {% for error in field.errors %}
+              <p class="text-sm text-red-600 mt-1">{{ error }}</p>
+            {% endfor %}
+          </div>
+        {% endfor %}
+
+        <!-- Attachment Upload -->
+        <div>
+          <label for="attachments" class="block text-sm font-medium text-gray-700 mb-1">Attachments</label>
+          <input type="file" name="attachments" id="attachments" multiple
+            class="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" />
+          <p class="text-xs text-gray-500 mt-1">You can select and upload multiple files.</p>
+        </div>
+
+        <!-- Existing Attachments -->
+        {% if form.instance.pk and form.instance.attachments.exists %}
+        <div class="border-t pt-4">
+            <h3 class="text-sm font-semibold text-gray-800 mb-2">Existing Attachments:</h3>
+            <p class="text-sm text-gray-600 mb-2">Attachment count: {{ form.instance.attachments.count }}</p>
+            <ul class="list-disc pl-5 text-sm text-gray-700 space-y-1">
+            {% for attachment in form.instance.attachments.all %}
+                <li>
+                <a href="{{ attachment.file.url }}" target="_blank" class="text-blue-600 hover:underline">
+                    {{ attachment.file.name|default:"Unnamed File" }}
+                </a>
+                </li>
+            {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+
+        <!-- Submit Button -->
+        <div class="pt-2">
+          <button type="submit"
+            class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+            Save Task
+          </button>
+        </div>
+      </form>
+    </div>
+
+  </div>
+</div>
+
+{% include 'includes/alerts.html' %}
+{% endblock %}
