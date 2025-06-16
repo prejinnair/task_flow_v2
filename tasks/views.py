@@ -7,29 +7,42 @@ from projects.models import Project
 from accounts.models import User
 from django.db.models import Q
 from accounts.decorators import permission_required
+from django.http import JsonResponse
+from django.utils.dateparse import parse_date
 
 @login_required
 def task_list(request):
     user = request.user
 
-    if user.role in [0, 1, 2]:  # Admin or Manager
-        tasks = Task.objects.all()
+    if user.role in [0, 1]:  # Super Admin / Admin
+        tasks = Task.objects.all().order_by('id')
         involved_projects = Project.objects.all()
-        involved_users = User.objects.filter(teams__projects__in=involved_projects).distinct()
-    else:
-        # Teams the user belongs to
-        user_teams = user.teams.all()
+        involved_users = User.objects.all()
 
-        # Projects linked to user's teams or managed by the user
-        involved_projects = Project.objects.filter(
-            Q(teams__in=user_teams) |
-            Q(managed_by=user)
+    elif user.role == 2:  # Manager
+        # Get users who report to this manager
+        direct_reports = User.objects.filter(reporting_manager=user)
+
+        # Get their tasks and tasks related to manager’s projects/teams
+        user_teams = user.teams.all()
+        involved_projects = Project.objects.filter(Q(teams__in=user_teams) | Q(managed_by=user)).distinct()
+
+        tasks = Task.objects.filter(
+            Q(project__in=involved_projects) |
+            Q(assigned_to__in=direct_reports) |
+            Q(created_by__in=direct_reports)
+        ).distinct().order_by('id')
+
+        involved_users = User.objects.filter(
+            Q(teams__projects__in=involved_projects) |
+            Q(id__in=direct_reports)
         ).distinct()
 
-        # Only tasks in involved projects
-        tasks = Task.objects.filter(project__in=involved_projects)
-
-        # Only users in the teams assigned to those projects
+    else:
+        # Regular User
+        user_teams = user.teams.all()
+        involved_projects = Project.objects.filter(Q(teams__in=user_teams) | Q(managed_by=user)).distinct()
+        tasks = Task.objects.filter(project__in=involved_projects).order_by('id')
         involved_users = User.objects.filter(teams__projects__in=involved_projects).distinct()
 
     # Apply filters
@@ -58,6 +71,7 @@ def task_list(request):
         "priority_choices": Task.PRIORITY_CHOICES,
     }
     return render(request, "tasks/task_list.html", context)
+
 
 
 @login_required
@@ -93,7 +107,7 @@ def task_create(request):
 def task_update(request, pk):
     task = get_object_or_404(Task, pk=pk)
     if request.method == 'POST':
-        form = TaskForm(request.POST, instance=task)
+        form = TaskForm(request.POST, instance=task, user=request.user)
         files = request.FILES.getlist('attachments')
         if form.is_valid():
             form.save()
@@ -102,7 +116,7 @@ def task_update(request, pk):
             messages.success(request, 'Task updated successfully.')
             return redirect('tasks:task_detail', pk=task.pk)
     else:
-        form = TaskForm(instance=task)
+        form = TaskForm(instance=task, user=request.user)
     return render(request, 'tasks/task_form.html', {'form': form})
 
 @login_required
@@ -203,21 +217,46 @@ def test_case_delete(request, pk):
     return render(request, 'testcases/test_case_confirm_delete.html', {'test_case': test_case})
 
 
-from django.utils.timezone import now
+def task_update_ajax(request):
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Invalid request method.'})
 
-@login_required
-def mark_task_completed(request, task_id):
-    task = get_object_or_404(Task, id=task_id)
+    task_id = request.POST.get('task_id')
+    try:
+        task = Task.objects.get(id=task_id)
+    except Task.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Task not found.'})
 
     # Permission check
-    if request.user != task.assigned_to and not request.user.is_superuser and request.user != task.created_by:
-        messages.error(request, "You don't have permission to mark this task as completed.")
-        return redirect('tasks:task_list')
+    if not (request.user == task.assigned_to or request.user == task.created_by or request.user.role in [0, 1, 2] or request.user == task.testing_assigned_to):
+        return JsonResponse({'success': False, 'message': "You don't have permission to update this task."})
 
-    task.status = 'done'
-    task.completed_at = now()
+    # Basic fields
+    task.title = request.POST.get('title', task.title)
+    task.priority = request.POST.get('priority', task.priority)
+    task.status = request.POST.get('status', task.status)
+    task.due_date = request.POST.get('due_date') or task.due_date
+    task.assigned_to_id = request.POST.get('assigned_to') or None
+
+    task.estimated_hours = request.POST.get('estimated_hours') or None
+    task.actual_hours = request.POST.get('actual_hours') or None
+
+    completed_at_str = request.POST.get('completed_at')
+    task.completed_at = parse_date(completed_at_str) if completed_at_str else None
     task.updated_by = request.user
-    task.save(update_fields=['status', 'completed_at', 'updated_by'])
 
-    messages.success(request, f"Task '{task.title}' marked as completed.")
-    return redirect('tasks:task_list')
+    task.reviewed_by_id = request.POST.get('reviewed_by') or None
+    task.testing_assigned_to_id = request.POST.get('testing_assigned_to') or None
+
+    task.save()
+    return JsonResponse({'success': True})
+
+def update_testcase_status(request, testcase_id):
+    case = get_object_or_404(TestCase, id=testcase_id)
+    new_status = request.POST.get('status')
+
+    if new_status in dict(TestCase.STATUS_CHOICES).keys():
+        case.status = new_status
+        case.save()
+        messages.success(request, 'Test case Status updated successfully.')
+    return redirect('tasks:task_detail', pk=case.task.pk)

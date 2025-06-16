@@ -9,6 +9,7 @@ class Task(models.Model):
         ('to_do', 'To Do'),
         ('in_progress', 'In Progress'),
         ('in_review', 'In Review'),
+        ('testing', 'Testing'),
         ('done', 'Done'),
         ('blocked', 'Blocked'),
     ]
@@ -36,6 +37,7 @@ class Task(models.Model):
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_tasks')
     reviewed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='reviewed_tasks')
     approved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_tasks')
+    testing_assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='tested_by')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='to_do')
     priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='medium')
     type = models.CharField(max_length=20, choices=TYPE_CHOICES, default='feature')
@@ -53,6 +55,13 @@ class Task(models.Model):
     github_issue_url = models.URLField(blank=True, null=True)
     github_pr_url = models.URLField(blank=True, null=True)
     is_github_synced = models.BooleanField(default=False)
+    parent = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='subtasks'
+    )
     recurrence_interval = models.CharField(
         max_length=20,
         choices=[('daily', 'Daily'), ('weekly', 'Weekly'), ('monthly', 'Monthly')],
@@ -91,18 +100,21 @@ class Label(models.Model):
 
 
 class TestCase(models.Model):
+    STATUS_CHOICES = [
+        ('not_tested', 'Not Tested'),
+        ('passed', 'Passed'),
+        ('failed', 'Failed'),
+        ('blocked', 'Blocked'),
+    ]
+
     task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='test_cases')
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     expected_result = models.TextField()
     actual_result = models.TextField(blank=True)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='test_cases')
-    status = models.CharField(max_length=20, choices=[
-        ('not_tested', 'Not Tested'),
-        ('passed', 'Passed'),
-        ('failed', 'Failed'),
-        ('blocked', 'Blocked'),
-    ], default='not_tested')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='not_tested')
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     def __str__(self):

@@ -31,6 +31,7 @@ def team_create(request):
         if form.is_valid():
             team = form.save(commit=False)
             team.created_by = request.user
+            team.updated_by = request.user
             team.save()
             form.save_m2m()
             messages.success(request, 'Team created successfully.')
@@ -46,6 +47,7 @@ def team_update(request, pk):
     if request.method == 'POST':
         form = TeamForm(request.POST, instance=team)
         if form.is_valid():
+            team.updated_by = request.user
             form.save()
             messages.success(request, 'Team updated successfully.')
             return redirect('projects:team_list')

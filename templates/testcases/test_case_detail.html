@@ -7,15 +7,19 @@
     <div class="flex items-center justify-between mb-4 flex-shrink-0">
         <h1 class="text-3xl font-semibold text-gray-800">Test Case Details</h1>
         <div class="space-x-2">
+            {% if request.user.role == 4 %}
             <a href="{% url 'tasks:test_case_update' test_case.pk %}" class="inline-flex items-center px-4 py-2 text-sm font-medium bg-green-600 text-white rounded hover:bg-green-700 transition">
                 <i data-feather="edit" class="w-4 h-4 mr-1"></i>Edit
             </a>
             <a href="{% url 'tasks:test_case_delete' test_case.pk %}" class="inline-flex items-center px-4 py-2 text-sm font-medium bg-red-600 text-white rounded hover:bg-red-700 transition">
                 <i data-feather="trash-2" class="w-4 h-4 mr-1"></i>Delete
             </a>
+
             <a href="{% url 'tasks:test_case_list_by_task' test_case.task.id %}" class="inline-flex items-center px-4 py-2 text-sm font-medium bg-gray-600 text-white rounded hover:bg-gray-700 transition">
                 <i data-feather="arrow-left" class="w-4 h-4 mr-1"></i>Back to Test Cases
             </a>
+                                    {% endif %}
+
 <a href="{% url 'tasks:task_detail' test_case.task.id %}" class="inline-flex items-center px-4 py-2 text-sm font-medium bg-gray-600 text-white rounded hover:bg-gray-700 transition">
     <i data-feather="arrow-right" class="w-4 h-4 mr-1"></i>Go to Task Details
 </a>

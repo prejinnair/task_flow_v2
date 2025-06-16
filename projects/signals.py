@@ -1,11 +1,14 @@
 from django.db.models.signals import post_save, pre_save, m2m_changed, post_delete
 from django.dispatch import receiver
+from django.utils.timezone import now
+
 from projects.models import Project, ProjectTeam
 from tasks.models import ActivityLog, Team
 from accounts.models import User
-from django.utils.timezone import now
+from notifications.models import Notification
 
-# Cache previous state for comparison
+# --- PROJECT SIGNALS ---
+
 @receiver(pre_save, sender=Project)
 def cache_old_project_state(sender, instance, **kwargs):
     if instance.pk:
@@ -26,7 +29,6 @@ def log_project_activity(sender, instance, created, **kwargs):
         )
     else:
         if old:
-            # Status Change
             if old.status != instance.status:
                 emoji = {
                     'not_started': '📝',
@@ -40,8 +42,7 @@ def log_project_activity(sender, instance, created, **kwargs):
                     action=f"{emoji} Project '{instance.name}' status changed from '{old.status}' to '{instance.status}'",
                     related_project=instance
                 )
-            
-            # Deadline Change
+
             if old.deadline != instance.deadline:
                 ActivityLog.objects.create(
                     user=instance.updated_by,
@@ -49,7 +50,6 @@ def log_project_activity(sender, instance, created, **kwargs):
                     related_project=instance
                 )
 
-            # Manager change
             if old.managed_by != instance.managed_by:
                 ActivityLog.objects.create(
                     user=instance.updated_by,
@@ -57,7 +57,6 @@ def log_project_activity(sender, instance, created, **kwargs):
                     related_project=instance
                 )
 
-            # Archive toggle
             if old.is_archived != instance.is_archived:
                 action = "📦 archived" if instance.is_archived else "♻️ unarchived"
                 ActivityLog.objects.create(
@@ -66,7 +65,7 @@ def log_project_activity(sender, instance, created, **kwargs):
                     related_project=instance
                 )
 
-# Log when a team is assigned or removed from a project
+
 @receiver(m2m_changed, sender=Project.teams.through)
 def log_project_team_assignment(sender, instance, action, pk_set, **kwargs):
     if action == 'post_add':
@@ -77,20 +76,34 @@ def log_project_team_assignment(sender, instance, action, pk_set, **kwargs):
                 action=f"👥 Team '{pt.team.name}' assigned to Project '{instance.name}'",
                 related_project=instance
             )
+            for member in pt.team.members.all():
+                Notification.objects.create(
+                    user=member,
+                    message=f"📌 Your team '{pt.team.name}' was assigned to project '{instance.name}'",
+                    url=f"/projects/{instance.id}/"
+                )
+
     elif action == 'post_remove':
-        # You may want to fetch team names before they're removed
-        for pk in pk_set:
+        teams = Team.objects.filter(pk__in=pk_set)
+        for team in teams:
             ActivityLog.objects.create(
                 user=instance.updated_by,
-                action=f"👤 Team removed from Project '{instance.name}'",
+                action=f"👤 Team '{team.name}' removed from Project '{instance.name}'",
                 related_project=instance
             )
+            for member in team.members.all():
+                Notification.objects.create(
+                    user=member,
+                    message=f"📌 Your team '{team.name}' was removed from project '{instance.name}'",
+                    url=f"/projects/{instance.id}/"
+                )
 
 
-# TEAM CREATED / UPDATED
+# --- TEAM SIGNALS ---
+
 @receiver(post_save, sender=Team)
 def log_team_save(sender, instance, created, **kwargs):
-    user = instance.created_by if created else None
+    user = instance.created_by if created else instance.updated_by or instance.created_by
     if created:
         ActivityLog.objects.create(
             user=user,
@@ -99,24 +112,22 @@ def log_team_save(sender, instance, created, **kwargs):
         )
     else:
         ActivityLog.objects.create(
-            user=user or instance.created_by,
+            user=user,
             action=f"✏️ Team '{instance.name}' was updated.",
             related_team=instance
         )
 
-# TEAM DELETED
 @receiver(post_delete, sender=Team)
 def log_team_delete(sender, instance, **kwargs):
     ActivityLog.objects.create(
         user=instance.created_by,
         action=f"🗑️ Team '{instance.name}' was deleted.",
-        related_team=None  # Team is deleted
+        related_team=None
     )
 
-# TEAM MEMBERS ADDED / REMOVED
+
 @receiver(m2m_changed, sender=Team.members.through)
 def log_team_member_change(sender, instance, action, pk_set, **kwargs):
-
     if action == 'post_add':
         for pk in pk_set:
             member = User.objects.filter(pk=pk).first()
@@ -125,6 +136,11 @@ def log_team_member_change(sender, instance, action, pk_set, **kwargs):
                     user=instance.created_by,
                     action=f"➕ User '{member.username or member.email}' was added to Team '{instance.name}'.",
                     related_team=instance
+                )
+                Notification.objects.create(
+                    user=member,
+                    message=f"👥 You were added to Team '{instance.name}'",
+                    url=f"/projects/teams/{instance.id}/"
                 )
 
     elif action == 'post_remove':
@@ -135,4 +151,9 @@ def log_team_member_change(sender, instance, action, pk_set, **kwargs):
                     user=instance.created_by,
                     action=f"➖ User '{member.username or member.email}' was removed from Team '{instance.name}'.",
                     related_team=instance
+                )
+                Notification.objects.create(
+                    user=member,
+                    message=f"👥 You were removed from Team '{instance.name}'",
+                    url=f"/projects/teams/{instance.id}/"
                 )

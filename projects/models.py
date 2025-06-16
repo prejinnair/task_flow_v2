@@ -9,6 +9,7 @@ class Team(models.Model):
     members = models.ManyToManyField(User, related_name='teams')
     team_lead = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='led_teams')
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_teams')
+    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='updated_teams')  # ADD THIS LINE
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     status = models.CharField(max_length=20, choices=[
@@ -51,6 +52,7 @@ class Project(models.Model):
     is_archived = models.BooleanField(default=False)
     last_activity = models.DateTimeField(auto_now=True)
     managed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='managed_projects')
+    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='updated_projects')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

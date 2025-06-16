@@ -27,7 +27,7 @@ class TaskForm(TailwindFormMixin, forms.ModelForm):
     class Meta:
         model = Task
         fields = [
-            'title', 'description', 'type', 'project', 'assigned_to', 'status', 'priority',
+            'title', 'description', 'type', 'project', 'assigned_to', 'status', 'priority', 'parent', 
             'due_date', 'estimated_hours', 'actual_hours', 'start_date', 'completed_at',
         ]
         widgets = {

@@ -78,12 +78,27 @@
             <a href="{% url 'tasks:task_list' %}" class="px-6 py-3 hover:bg-blue-50 hover:text-blue-600 flex items-center gap-3 {% if request.resolver_match.url_name == 'task_list' %} bg-blue-100 text-blue-700 font-semibold {% endif %}">
                 <i data-feather="check-square" class="w-5 h-5"></i> Tasks
             </a>
+            {% if user.role == 4 %}
+            <a href="{% url 'tasks:test_case_list' %}" class="px-6 py-3 hover:bg-blue-50 hover:text-blue-600 flex items-center gap-3 {% if request.resolver_match.url_name == 'test_case_list' %} bg-blue-100 text-blue-700 font-semibold {% endif %}">
+                <i data-feather="file-text" class="w-5 h-5"></i> Test Cases
+            </a>
+            {% endif %}
+
 
             {% if user.role == 2 %}
             <a href="{% url 'accounts:user_list' %}" class="px-6 py-3 hover:bg-blue-50 hover:text-blue-600 flex items-center gap-3 {% if request.resolver_match.url_name == 'user_list' %} bg-blue-100 text-blue-700 font-semibold {% endif %}">
                 <i data-feather="users" class="w-5 h-5"></i> Users
             </a>
             {% endif %}
+            <a href="{% url 'notifications:list' %}" class="px-6 py-3 hover:bg-blue-50 hover:text-blue-600 flex items-center gap-3 {% if request.resolver_match.url_name == 'notification_list' %} bg-blue-100 text-blue-700 font-semibold {% endif %}">
+                <i data-feather="bell" class="w-5 h-5"></i>
+                Notifications
+                {% if notifications_unread_count != 0 %}
+                    <span class="ml-auto bg-red-500 text-white text-xs font-semibold px-2 py-0.5 rounded-full">
+                        {{ notifications_unread_count }}
+                    </span>
+                    {% endif %}
+            </a>
 
             <a href="{% url 'accounts:logout' %}" class="px-6 py-3 hover:bg-red-50 hover:text-red-600 flex items-center gap-3 text-red-600">
                 <i data-feather="log-out" class="w-5 h-5"></i> Logout
@@ -93,7 +108,7 @@
     {% endif %}
 
     <!-- Main Content -->
-    <div class="flex-1 ml-0 md:ml-64 overflow-y-auto px-4 py-6">
+<div class="flex-1 {% if user.is_authenticated %}ml-0 md:ml-64{% endif %} overflow-y-auto px-4 py-6">
         <!-- Toggle Button (mobile) -->
         <button id="toggleSidebar" class="md:hidden mb-4 p-2 border rounded-md">
             <i data-feather="menu" class="w-5 h-5"></i>

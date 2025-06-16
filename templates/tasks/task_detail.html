@@ -1,54 +1,112 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
-  <div class="bg-white border border-gray-200 shadow-xl rounded-lg overflow-hidden h-[85vh] flex flex-col">
+<div class="max-w-6xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+  <div class="bg-white border border-gray-200 shadow-xl rounded-lg overflow-hidden h-[90vh] flex flex-col">
 
     <!-- Header -->
-    <div class="px-6 py-4 border-b bg-gray-100 flex items-center justify-between flex-shrink-0">
+    <div class="px-6 py-5 border-b bg-gradient-to-r from-blue-50 to-blue-100 flex items-center justify-between flex-shrink-0">
       <div>
-        <h1 class="text-2xl font-bold text-gray-800">{{ task.title }}</h1>
-        <p class="text-sm text-gray-500 mt-1">{{ task.created_at|date:"M d, Y H:i" }} by {{ task.created_by }}</p>
+        <h1 class="text-3xl font-extrabold text-gray-800">{{ task.title }}</h1>
+        <p class="text-sm text-gray-500 mt-1">Created on {{ task.created_at|date:"M d, Y H:i" }} by {{ task.created_by }}</p>
       </div>
-      <div class="flex space-x-2">
-        <a href="{% url 'tasks:task_update' task.pk %}" class="text-sm bg-blue-600 text-white px-4 py-1 rounded hover:bg-blue-700">✏️ Edit</a>
+      <div class="flex flex-wrap gap-2">
+        <a href="{% url 'tasks:task_update' task.pk %}" class="inline-flex items-center text-sm bg-yellow-500 text-white px-4 py-1 rounded hover:bg-yellow-600">✏️ Edit</a>
         <form method="post" action="{% url 'tasks:task_delete' task.pk %}" onsubmit="return confirm('Are you sure you want to delete this task?');">
           {% csrf_token %}
-          <button type="submit" class="text-sm bg-red-600 text-white px-4 py-1 rounded hover:bg-red-700">🗑 Delete</button>
+          <button type="submit" class="inline-flex items-center text-sm bg-red-600 text-white px-4 py-1 rounded hover:bg-red-700">🗑 Delete</button>
         </form>
+        <a href="{% url 'tasks:task_list' %}" class="inline-flex items-center text-sm font-medium bg-gray-600 text-white px-4 py-1 rounded hover:bg-gray-700">
+          <i data-feather="arrow-left" class="w-4 h-4 mr-1"></i> Back
+        </a>
       </div>
     </div>
 
-    <!-- Scrollable Task Body -->
+    <!-- Body -->
     <div class="px-6 py-6 space-y-6 overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-gray-300 hover:scrollbar-thumb-gray-400">
 
       <!-- Description -->
       <div>
-        <h2 class="text-lg font-semibold text-gray-700 mb-2">Description</h2>
+        <h2 class="text-xl font-semibold text-gray-700 mb-2">📝 Description</h2>
         <p class="text-gray-800 whitespace-pre-line">{{ task.description }}</p>
       </div>
+<!-- Task Hierarchy -->
+<section>
+    {% if task.parent %}
+
+  <h2 class="text-lg font-semibold text-gray-700 mb-2">🔗 Task Hierarchy</h2>
+  <!-- Parent Task -->
+    <p class="mb-1 text-sm">
+      <strong>Parent Task:</strong>
+      <a href="{% url 'tasks:task_detail' task.parent.pk %}" class="text-blue-600 hover:underline">
+        {{ task.parent.title }}
+      </a>
+    </p>
+  {% endif %}
+
+  <!-- Blocked By -->
+  {% if task.blocked_by.exists %}
+    <div class="mb-2">
+      <strong class="text-sm">⛔ Blocked By:</strong>
+      <ul class="list-disc list-inside text-sm text-gray-800">
+        {% for blocker in task.blocked_by.all %}
+          <li>
+            <a href="{% url 'tasks:task_detail' blocker.pk %}" class="text-blue-600 hover:underline">
+              {{ blocker.title }}
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+
+  <!-- Blocking Other Tasks -->
+  {% with task.task_set.all as blocking_tasks %}
+    {% if blocking_tasks %}
+      <div>
+        <strong class="text-sm">✅ Blocking:</strong>
+        <ul class="list-disc list-inside text-sm text-gray-800">
+          {% for blocked_task in blocking_tasks %}
+            {% if task in blocked_task.blocked_by.all %}
+              <li>
+                <a href="{% url 'tasks:task_detail' blocked_task.pk %}" class="text-blue-600 hover:underline">
+                  {{ blocked_task.title }}
+                </a>
+              </li>
+            {% endif %}
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+  {% endwith %}
+</section>
 
       <!-- Metadata -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-700">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm text-gray-700">
         <p><strong>Status:</strong> {{ task.get_status_display }}</p>
         <p><strong>Priority:</strong> {{ task.get_priority_display }}</p>
+        <p><strong>Type:</strong> {{ task.get_type_display }}</p>
         <p><strong>Assigned to:</strong> {{ task.assigned_to }}</p>
+        {% if task.testing_assigned_to %}<p><strong>Testing By:</strong> {{ task.testing_assigned_to }}</p>{% endif %}
+        {% if task.reviewed_by %}<p><strong>Reviewed By:</strong> {{ task.reviewed_by }}</p>{% endif %}
+        {% if task.approved_by %}<p><strong>Approved By:</strong> {{ task.approved_by }}</p>{% endif %}
+        {% if task.labels.all %}<p><strong>Labels:</strong> {{ task.labels.all|join:", " }}</p>{% endif %}
         {% if task.team %}<p><strong>Team:</strong> {{ task.team.name }}</p>{% endif %}
         {% if task.project %}<p><strong>Project:</strong> {{ task.project.name }}</p>{% endif %}
-        {% if task.due_date %}<p><strong>Due Date:</strong> {{ task.due_date|date:"M d, Y" }}</p>{% endif %}
+        <p><strong>Estimated Hours:</strong> {{ task.estimated_hours }} hrs</p>
+        <p><strong>Actual Hours:</strong> {{ task.actual_hours }} hrs</p>
+        <p><strong>Start Date:</strong> {{ task.start_date|date:"M d, Y" }}</p>
+        <p><strong>Due Date:</strong> {{ task.due_date|date:"M d, Y" }}</p>
+        {% if task.completed_at %}<p><strong>Completed At:</strong> {{ task.completed_at|date:"M d, Y H:i" }}</p>{% endif %}
       </div>
 
       <!-- GitHub Links -->
       {% if task.github_issue_url or task.github_pr_url %}
       <div>
-        <h2 class="text-lg font-semibold text-gray-700 mb-2">GitHub</h2>
+        <h2 class="text-xl font-semibold text-gray-700 mb-2">🔗 GitHub Links</h2>
         <ul class="list-disc list-inside text-blue-600 text-sm space-y-1">
-          {% if task.github_issue_url %}
-            <li><a href="{{ task.github_issue_url }}" target="_blank" class="hover:underline">View GitHub Issue</a></li>
-          {% endif %}
-          {% if task.github_pr_url %}
-            <li><a href="{{ task.github_pr_url }}" target="_blank" class="hover:underline">View GitHub Pull Request</a></li>
-          {% endif %}
+          {% if task.github_issue_url %}<li><a href="{{ task.github_issue_url }}" target="_blank" class="hover:underline">View GitHub Issue</a></li>{% endif %}
+          {% if task.github_pr_url %}<li><a href="{{ task.github_pr_url }}" target="_blank" class="hover:underline">View GitHub PR</a></li>{% endif %}
         </ul>
       </div>
       {% endif %}
@@ -56,13 +114,11 @@
       <!-- Attachments -->
       {% if task.attachments.exists %}
       <div>
-        <h2 class="text-lg font-semibold text-gray-700 mb-2">Attachments ({{ task.attachments.count }})</h2>
+        <h2 class="text-xl font-semibold text-gray-700 mb-2">📎 Attachments ({{ task.attachments.count }})</h2>
         <ul class="list-disc pl-5 space-y-2 text-sm text-gray-700">
           {% for attachment in task.attachments.all %}
           <li>
-            <a href="{{ attachment.file.url }}" target="_blank" class="text-blue-600 hover:underline">
-              {{ attachment.file.name|default:"Unnamed File" }}
-            </a>
+            <a href="{{ attachment.file.url }}" target="_blank" class="text-blue-600 hover:underline">{{ attachment.file.name|default:"Unnamed File" }}</a>
             <span class="text-gray-400 text-xs ml-2">(Uploaded by {{ attachment.uploaded_by }} on {{ attachment.uploaded_at|date:"M d, Y H:i" }})</span>
           </li>
           {% endfor %}
@@ -71,13 +127,13 @@
       {% endif %}
 
       <!-- Comments -->
-      <!-- <div>
-        <h2 class="text-lg font-semibold text-gray-700 mb-3">Comments ({{ task.comments.count }})</h2>
+      <div>
+        <h2 class="text-xl font-semibold text-gray-700 mb-3">💬 Comments ({{ task.comments.count }})</h2>
         {% for comment in task.comments.all %}
         <div class="border rounded px-4 py-2 mb-3 bg-gray-50">
           <div class="flex justify-between items-center mb-1">
             <p class="font-medium text-gray-800">{{ comment.author }}</p>
-            <p class="text-xs text-gray-500">{{ comment.timestamp|date:"M d, Y H:i" }}</p>
+            <p class="text-xs text-gray-500">{{ comment.created_at|date:"M d, Y H:i" }}</p>
           </div>
           <p class="text-gray-700 text-sm">{{ comment.text }}</p>
         </div>
@@ -90,43 +146,70 @@
           {{ comment_form.as_p }}
           <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm">Add Comment</button>
         </form>
-      </div> -->
+      </div>
 
       <!-- Test Cases -->
       <div>
         <div class="flex justify-between items-center mb-2">
-          <h2 class="text-lg font-semibold text-gray-700">Test Cases ({{ task.test_cases.count }})</h2>
-          <a href="{% url 'tasks:test_case_create' task.pk %}" class="text-sm bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">
-            ➕ Add Test Case
-          </a>
+          <h2 class="text-xl font-semibold text-gray-700">🧪 Test Cases ({{ task.test_cases.count }})</h2>
+          {% if request.user.role == 4 %}
+          <a href="{% url 'tasks:test_case_create' task.pk %}" class="text-sm bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">➕ Add Test Case</a>
+          {% endif %}
         </div>
 
         {% for test_case in task.test_cases.all %}
         <div class="border p-3 rounded mb-2 bg-white shadow-sm">
-          <div class="flex justify-between items-start">
+        <div class="flex justify-between items-start">
             <div>
-              <p class="font-semibold text-gray-800">{{ test_case.title }}</p>
-              <p class="text-sm text-gray-600 mt-1">{{ test_case.description }}</p>
-              <p class="text-sm mt-1"><strong>Status:</strong> {{ test_case.get_status_display }}</p>
-            </div>
-            <div class="flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0 ml-4 mt-1 sm:mt-0">
-              <a href="{% url 'tasks:test_case_detail' test_case.pk %}" class="text-sm bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">🔍 View</a>
-              <a href="{% url 'tasks:test_case_update' test_case.pk %}" class="text-sm bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600">✏️ Edit</a>
-              <form method="post" action="{% url 'tasks:test_case_delete' test_case.pk %}" onsubmit="return confirm('Are you sure you want to delete this test case?');">
+            <p class="font-semibold text-gray-800">{{ test_case.title }}</p>
+            <p class="text-sm text-gray-600 mt-1">{{ test_case.description }}</p>
+
+            {% if request.user.role == 4 %}
+            <form method="post" action="{% url 'tasks:update_testcase_status' test_case.id %}" class="inline">
                 {% csrf_token %}
-                <button type="submit" class="text-sm bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700">🗑 Delete</button>
-              </form>
+                <label for="status_{{ test_case.id }}" class="text-sm font-medium text-gray-700 mr-2">Status:</label>
+                <select name="status" id="status_{{ test_case.id }}"
+                        onchange="this.form.submit()"
+                        class="text-sm rounded border-gray-300 focus:ring-blue-500 focus:border-blue-500">
+                {% for key, value in test_case.STATUS_CHOICES %}
+                <option value="{{ key }}" {% if test_case.status == key %}selected{% endif %}>{{ value }}</option>
+                {% endfor %}
+                </select>
+            </form>
+            {% else %}
+            <p class="text-sm mt-2"><strong>Status:</strong> {{ test_case.get_status_display }}</p>
+            {% endif %}
             </div>
-          </div>
+
+            <div class="flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0 ml-4 mt-1 sm:mt-0">
+            <a href="{% url 'tasks:test_case_detail' test_case.pk %}"
+                class="text-sm bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">
+                🔍 View
+            </a>
+
+            {% if request.user.role == 4 %}
+            <a href="{% url 'tasks:test_case_update' test_case.pk %}"
+                class="text-sm bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600">
+                ✏️ Edit
+            </a>
+            <form method="post" action="{% url 'tasks:test_case_delete' test_case.pk %}"
+                    onsubmit="return confirm('Delete this test case?');" class="inline">
+                {% csrf_token %}
+                <button type="submit"
+                        class="text-sm bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700">
+                🗑 Delete
+                </button>
+            </form>
+            {% endif %}
+            </div>
+        </div>
         </div>
         {% empty %}
         <p class="text-sm text-gray-500">No test cases added.</p>
         {% endfor %}
       </div>
-
     </div>
   </div>
 </div>
-
 {% include 'includes/alerts.html' %}
 {% endblock %}

@@ -1,6 +1,7 @@
 from django import forms
 from accounts.models import User
 from .models import Team, Project, ProjectTeam
+from django.forms.widgets import CheckboxSelectMultiple
 
 
 class TailwindFormMixin:
@@ -43,16 +44,29 @@ class TailwindFormMixin:
 
 
 class TeamForm(TailwindFormMixin, forms.ModelForm):
+    members = forms.ModelMultipleChoiceField(
+        queryset=User.objects.filter(role__in=[3, 4, 5]),
+        widget=CheckboxSelectMultiple,
+        required=False
+    )
+
     class Meta:
         model = Team
         fields = ['name', 'description', 'members', 'team_lead', 'status']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['members'].queryset = User.objects.filter(role__in=[3, 4, 5])  # team members
+        # You can optionally override team_lead queryset too if needed
+        self.fields['team_lead'].queryset = User.objects.filter(role__in=[3, 4, 5])
 
 
 class ProjectForm(TailwindFormMixin, forms.ModelForm):
+    teams = forms.ModelMultipleChoiceField(
+        queryset=Team.objects.all(),
+        widget=CheckboxSelectMultiple,
+        required=False
+    )
+
     class Meta:
         model = Project
         fields = [
@@ -62,8 +76,7 @@ class ProjectForm(TailwindFormMixin, forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['managed_by'].queryset = User.objects.filter(role__in=[0, 1, 2])  # superadmin/admin/manager
-
+        self.fields['managed_by'].queryset = User.objects.filter(role__in=[0, 1, 2])
 
 class ProjectTeamForm(forms.ModelForm):
     class Meta:

@@ -60,7 +60,15 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(max_length=100, unique=True)
     phonenumber = models.CharField(max_length=12)
     role = models.PositiveSmallIntegerField(choices=ROLE_CHOICES, blank=True, null=True)
-
+    reporting_manager = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='reporting_to',
+        limit_choices_to={'role': MANAGER},
+        help_text="The user to whom this user reports directly."
+    )
     #required fields
     date_joined = models.DateTimeField(auto_now_add=True)
     last_login = models.DateTimeField(auto_now_add=True)

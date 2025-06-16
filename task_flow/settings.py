@@ -43,7 +43,8 @@ INSTALLED_APPS = [
     'accounts',
     'tasks',
     'projects',
-    'widget_tweaks'
+    'widget_tweaks',
+    'notifications',
 ]
 
 MIDDLEWARE = [
@@ -69,6 +70,8 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'notifications.context_processors.unread_notifications_count',
+
             ],
         },
     },
@@ -116,7 +119,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Kolkata'
 
 USE_I18N = True
 

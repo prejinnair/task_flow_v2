@@ -185,7 +185,7 @@ def manager_dashboard(request):
         Q(related_project__in=managed_projects) |
         Q(related_team__in=related_teams) |
         Q(related_task__in=related_tasks)
-    ).order_by('-created_at')[:5]
+    ).order_by('-created_at')[:6]
 
     # Aggregate task status counts
     status_agg = related_tasks.values('status').annotate(count=Count('id'))
@@ -200,6 +200,7 @@ def manager_dashboard(request):
     context = {
         'user_count': related_teams.values('members').distinct().count(),
         'team_count': related_teams.count(),
+        'task_count': related_tasks.count(),
         'project_count': managed_projects.count(),
         'tasks_completed_week': related_tasks.filter(status='done', updated_at__gte=week_ago).count(),
         'recent_activities': activity_logs,
@@ -215,7 +216,7 @@ def manager_dashboard(request):
 def qa_dashboard(request):
     user = request.user
 
-    qa_tasks = Task.objects.filter(assigned_to=user)
+    qa_tasks = Task.objects.filter(Q(assigned_to=user)| Q(testing_assigned_to=user))
     qa_assigned_count = qa_tasks.count()
 
     bugs_assigned_count = Task.objects.filter(created_by=user, type='bug').count()
@@ -351,12 +352,7 @@ def profile_view(request):
 @permission_required('manage_users')
 def user_list_view(request):
     user = request.user
-    # Projects managed by the manager
-    managed_projects = Project.objects.filter(managed_by=user)
-
-    # Teams associated with the manager's projects
-    related_teams = Team.objects.filter(projects__in=managed_projects).distinct()
-    users = User.objects.filter(teams__in=related_teams).distinct()
+    users = User.objects.filter(reporting_manager=user).distinct()
 
     return render(request, 'accounts/user_list.html', {'users': users})
 

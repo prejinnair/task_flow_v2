@@ -13,6 +13,9 @@
                 <a href="{% url 'projects:project_delete' project.pk %}" class="inline-flex items-center gap-1 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition">
                     <i data-feather="trash-2" class="w-4 h-4"></i> Remove
                 </a>
+            <a href="{% url 'projects:project_list' %}" class="inline-flex items-center text-sm font-medium bg-gray-600 text-white px-4 py-1 rounded hover:bg-gray-700">
+                <i data-feather="arrow-left" class="w-4 h-4 mr-1"></i> Back to Projects
+            </a>
             </div>
         </div>
 
@@ -29,6 +32,8 @@
                 </span>
             </p>
             <p><strong>Created By:</strong> {{ project.created_by }}</p>
+            <p><strong>Managed By:</strong> {{ project.managed_by }}</p>
+
             <p><strong>Created On:</strong> {{ project.created_at|date:"Y-m-d H:i" }}</p>
             <p><strong>Last Updated:</strong> {{ project.updated_at|date:"Y-m-d H:i" }}</p>
         </div>
