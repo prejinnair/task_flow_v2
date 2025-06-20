@@ -109,7 +109,7 @@ def project_update(request, pk):
         if form.is_valid():
             form.save()
             messages.success(request, 'Project updated successfully.')
-            return redirect('projects:project_list', pk=project.pk)
+            return redirect('projects:project_list')
     else:
         form = ProjectForm(instance=project)
     return render(request, 'projects/project_form.html', {'form': form})

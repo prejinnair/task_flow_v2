@@ -8,27 +8,40 @@
 
   <!-- QA Stats Cards -->
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-6 mb-10">
+    <!-- Active QA Workload -->
     <div class="bg-white rounded-2xl shadow p-6">
       <h3 class="text-sm text-gray-500">QA Tasks Assigned</h3>
       <p class="text-3xl font-bold text-blue-600 mt-2">{{ qa_assigned_count }}</p>
     </div>
+
     <div class="bg-white rounded-2xl shadow p-6">
-      <h3 class="text-sm text-gray-500">Bugs Verified</h3>
-      <p class="text-3xl font-bold text-green-600 mt-2">{{ bugs_verified_count }}</p>
+      <h3 class="text-sm text-gray-500">Testing In Progress</h3>
+      <p class="text-3xl font-bold text-yellow-500 mt-2">{{ in_progress_count }}</p>
     </div>
+
     <div class="bg-white rounded-2xl shadow p-6">
       <h3 class="text-sm text-gray-500">Pending Verifications</h3>
-      <p class="text-3xl font-bold text-yellow-500 mt-2">{{ pending_verifications_count }}</p>
+      <p class="text-3xl font-bold text-orange-600 mt-2">{{ pending_verifications_count }}</p>
     </div>
+
+    <!-- Test Case Outcomes -->
     <div class="bg-white rounded-2xl shadow p-6">
-      <h3 class="text-sm text-gray-500">UAT Passed</h3>
+      <h3 class="text-sm text-gray-500">Failed Test Cases</h3>
+      <p class="text-3xl font-bold text-red-600 mt-2">{{ failed_test_cases_count }}</p>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow p-6">
+      <h3 class="text-sm text-gray-500">Tested and Passed</h3>
       <p class="text-3xl font-bold text-purple-600 mt-2">{{ uat_passed_count }}</p>
     </div>
+
+    <!-- Bugs -->
     <div class="bg-white rounded-2xl shadow p-6">
       <h3 class="text-sm text-gray-500">Bugs Assigned by You</h3>
-      <p class="text-3xl font-bold text-orange-600 mt-2">{{ bugs_assigned_count }}</p>
+      <p class="text-3xl font-bold text-green-600 mt-2">{{ bugs_assigned_count }}</p>
     </div>
   </div>
+
 
   <!-- Recent QA Activities Table -->
   <div>
@@ -39,7 +52,7 @@
         <thead class="bg-gray-50">
           <tr>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Task</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Test Status</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bug ID</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Updated</th>
           </tr>
@@ -53,10 +66,10 @@
               </a>
             </td>
             <td class="px-6 py-4 text-indigo-600 font-semibold">
-              {{ task.test_status }}
+              {{ task.get_status_display }}
             </td>
             <td class="px-6 py-4 text-red-600 font-semibold">
-              {{ task.bug_id|default:"—" }}
+              {{ task.task_key|default:"—" }}
             </td>
             <td class="px-6 py-4 text-sm text-gray-500">
               {{ task.updated_at|timesince }} ago
@@ -68,6 +81,22 @@
     </div>
     {% else %}
     <p class="text-gray-500">No QA activity found.</p>
+    {% endif %}
+  </div>
+  <br>
+    <div>
+    <h2 class="text-xl font-semibold mb-4">Your Activity</h2>
+    {% if activity_logs %}
+    <ul class="space-y-4">
+      {% for log in activity_logs %}
+      <li class="bg-white shadow rounded-lg p-4">
+        <p class="text-gray-700">{{ log.action }}</p>
+        <p class="text-sm text-gray-500 mt-1">{{ log.created_at|timesince }} ago</p>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="text-gray-500">No activity yet.</p>
     {% endif %}
   </div>
 </div>

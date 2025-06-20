@@ -51,6 +51,7 @@ def task_list(request):
     assigned_to = request.GET.get("assigned_to")
     priority = request.GET.get("priority")
     status = request.GET.get("status")
+    type = request.GET.get("type")
 
     if search:
         tasks = tasks.filter(title__icontains=search)
@@ -62,6 +63,8 @@ def task_list(request):
         tasks = tasks.filter(priority=priority)
     if status:
         tasks = tasks.filter(status=status)
+    if type:
+        tasks = tasks.filter(type=type)
 
     context = {
         "tasks": tasks,
@@ -69,6 +72,7 @@ def task_list(request):
         "users": involved_users,
         "status_choices": Task.STATUS_CHOICES,
         "priority_choices": Task.PRIORITY_CHOICES,
+        "type_choices": Task.TYPE_CHOICES,
     }
     return render(request, "tasks/task_list.html", context)
 
@@ -87,21 +91,51 @@ def task_detail(request, pk):
 
 @login_required
 def task_create(request):
+    related_test_case_id = request.GET.get('related_test_case')
+    related_task_id = request.GET.get('related_task')
+
+    initial_data = {}
+
+    if related_test_case_id:
+        test_case = get_object_or_404(TestCase, id=related_test_case_id)
+        initial_data['title'] = f"Test Case {test_case.title} Failed"
+        initial_data['description'] = f"Issue reported for Test Case: {test_case.title}"
+    if related_task_id:
+        try:
+            related_task = Task.objects.get(id=related_task_id)
+            initial_data['project'] = related_task.project_id
+            initial_data['type'] = 'bug'
+            initial_data['parent'] = related_task_id
+            initial_data['assigned_to'] = related_task.assigned_to_id
+        except Task.DoesNotExist:
+            pass
+
     if request.method == 'POST':
         form = TaskForm(request.POST, user=request.user)
         files = request.FILES.getlist('attachments')
+
         if form.is_valid():
             task = form.save(commit=False)
             task.created_by = request.user
             task.save()
             form.save_m2m()
+
+            # Save uploaded attachments
             for file in files:
                 task.attachments.create(file=file, uploaded_by=request.user)
+
             messages.success(request, 'Task created successfully.')
             return redirect('tasks:task_detail', pk=task.pk)
+
     else:
-        form = TaskForm(user=request.user)
-    return render(request, 'tasks/task_form.html', {'form': form})
+        form = TaskForm(initial=initial_data, user=request.user)
+
+    return render(request, 'tasks/task_form.html', {
+        'form': form,
+        'related_test_case': test_case,
+        'related_task': related_task_id
+    })
+
 
 @login_required
 def task_update(request, pk):
@@ -120,10 +154,13 @@ def task_update(request, pk):
     return render(request, 'tasks/task_form.html', {'form': form})
 
 @login_required
-@permission_required('delete_tasks')
 def task_delete(request, pk):
     task = get_object_or_404(Task, pk=pk)
     if request.method == 'POST':
+        # Check if the user has permission to delete the task
+        if not (request.user == task.created_by or request.user.role in [0, 1, 2]):
+            messages.error(request, "You don't have permission to delete this task.")
+            return redirect('tasks:task_detail', pk=pk)
         task.delete()
         messages.success(request, 'Task deleted successfully.')
         return redirect('tasks:task_list')
@@ -143,7 +180,30 @@ def add_comment(request, task_id):
             return redirect('tasks:task_detail', pk=task_id)
     else:
         form = CommentForm()
-    return render(request, 'tasks/comment_form.html', {'form': form})
+    return render(request, 'tasks/comment_form.html', {'form': form, 'task': task})
+
+@login_required
+def edit_comment(request, pk):
+    comment = get_object_or_404(Comment, pk=pk, author=request.user)
+    if request.method == 'POST':
+        form = CommentForm(request.POST, instance=comment)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Comment updated.')
+            return redirect('tasks:task_detail', pk=comment.task.pk)
+    else:
+        form = CommentForm(instance=comment)
+    return render(request, 'tasks/comment_form.html', {'form': form, 'task': comment.task})
+
+@login_required
+def delete_comment(request, pk):
+    comment = get_object_or_404(Comment, pk=pk, author=request.user)
+    task_id = comment.task.pk
+    if request.method == 'POST':
+        comment.delete()
+        messages.success(request, 'Comment deleted.')
+        return redirect('tasks:task_detail', pk=task_id)
+    return render(request, 'tasks/comment_confirm_delete.html', {'comment': comment})
 
 @login_required
 def label_list(request):
@@ -247,7 +307,7 @@ def task_update_ajax(request):
 
     task.reviewed_by_id = request.POST.get('reviewed_by') or None
     task.testing_assigned_to_id = request.POST.get('testing_assigned_to') or None
-
+    task.github_pr_url = request.POST.get('github_pr_url')
     task.save()
     return JsonResponse({'success': True})
 

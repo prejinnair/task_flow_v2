@@ -1,10 +1,11 @@
 from django.db import models
 from accounts.models import User
 from django.utils.text import slugify
+from autoslug import AutoSlugField
 
 class Team(models.Model):
     name = models.CharField(max_length=100, unique=True)
-    slug = models.SlugField(unique=True, blank=True)
+    slug = AutoSlugField(populate_from='name', unique=True, always_update=False)
     description = models.TextField(blank=True)
     members = models.ManyToManyField(User, related_name='teams')
     team_lead = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='led_teams')
@@ -19,8 +20,15 @@ class Team(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.name)
+            base_slug = slugify(self.name)[:50]
+            slug = base_slug
+            counter = 1
+            while Team.objects.filter(slug=slug).exists():
+                slug = f"{base_slug[:45]}-{counter}"  # ensure max length is not exceeded
+                counter += 1
+            self.slug = slug
         super().save(*args, **kwargs)
+
 
     def __str__(self):
         return self.name
@@ -29,7 +37,8 @@ class Team(models.Model):
 
 class Project(models.Model):
     name = models.CharField(max_length=100)
-    slug = models.SlugField(unique=True, blank=True)
+    slug = AutoSlugField(populate_from='name', unique=True, always_update=False)
+    project_key = models.CharField(max_length=50, unique=True, help_text="Unique identifier for the project", blank=True, null=True)
     description = models.TextField(blank=True)
     teams = models.ManyToManyField(Team, through='ProjectTeam', related_name='projects')
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_projects')
@@ -58,8 +67,18 @@ class Project(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.name)
+            base_slug = slugify(self.name)[:50]
+            slug = base_slug
+            counter = 1
+            while Project.objects.filter(slug=slug).exists():
+                slug = f"{base_slug[:45]}-{counter}"
+                counter += 1
+            self.slug = slug
+        
+        if not self.project_key:
+            self.project_key = self.slug.upper()[:10]  # Generate project key from slug, ensuring it's unique and short
         super().save(*args, **kwargs)
+
 
     def __str__(self):
         return self.name

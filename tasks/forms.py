@@ -4,7 +4,7 @@ from django import forms
 from .models import Task, Comment, Label, TestCase
 from accounts.models import User
 from projects.models import Project
-
+from django.db.models import Q
 
 class TailwindFormMixin:
     """Reusable mixin to apply Tailwind classes to all fields."""
@@ -27,8 +27,8 @@ class TaskForm(TailwindFormMixin, forms.ModelForm):
     class Meta:
         model = Task
         fields = [
-            'title', 'description', 'type', 'project', 'assigned_to', 'status', 'priority', 'parent', 
-            'due_date', 'estimated_hours', 'actual_hours', 'start_date', 'completed_at',
+            'title', 'description', 'type', 'project', 'assigned_to', 'status', 'priority', 'parent', 'start_date',
+            'due_date', 'estimated_hours', 'actual_hours',  'completed_at',
         ]
         widgets = {
             'due_date': forms.DateInput(attrs={'type': 'date'}),
@@ -44,7 +44,7 @@ class TaskForm(TailwindFormMixin, forms.ModelForm):
         # Filter projects based on user's teams
         if user:
             teams = user.teams.all()
-            projects = Project.objects.filter(teams__in=teams, is_archived=False).distinct()
+            projects = Project.objects.filter(Q(teams__in=teams)| Q(managed_by=user), is_archived=False).distinct()
             self.fields['project'].queryset = projects
         else:
             self.fields['project'].queryset = Project.objects.none()
@@ -54,11 +54,13 @@ class TaskForm(TailwindFormMixin, forms.ModelForm):
 
 
 
-class CommentForm(TailwindFormMixin, forms.ModelForm):
+class CommentForm(forms.ModelForm):
     class Meta:
         model = Comment
-        fields = ['text']
-
+        fields = ['text', 'is_internal']
+        widgets = {
+            'text': forms.Textarea(attrs={'rows': 4}),
+        }
 
 class LabelForm(TailwindFormMixin, forms.ModelForm):
     class Meta:

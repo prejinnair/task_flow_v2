@@ -13,3 +13,7 @@ add manager when a user is created
 self task -->status:todo ---> started working status: inprogress ---> code pushed status: in_review -->dev deployment status: testing ---> if testing is okay status: done / if not okay return status: closed
 
 
+add excel/csv export option
+
+add comment page
+add notification for testing and status change

@@ -3,6 +3,8 @@ from accounts.models import User
 from django.utils.text import slugify
 from projects.models import Project, Team
 from django.utils import timezone
+from autoslug import AutoSlugField
+
 
 class Task(models.Model):
     STATUS_CHOICES = [
@@ -28,9 +30,9 @@ class Task(models.Model):
         ('research', 'Research'),
         ('chore', 'Chore'),
     ]
-
     title = models.CharField(max_length=200)
-    slug = models.SlugField(unique=True, blank=True)
+    slug = AutoSlugField(populate_from='title', unique=True, always_update=False)
+    task_key = models.CharField(max_length=50, unique=True, help_text="Unique identifier for the task", blank=True, null=True)
     description = models.TextField(blank=True)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='tasks')
     assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_tasks')
@@ -73,8 +75,23 @@ class Task(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.title)[:50]
+            base_slug = slugify(self.title)[:50]
+            slug = base_slug
+            counter = 1
+            while Task.objects.filter(slug=slug).exists():
+                slug = f"{base_slug[:45]}-{counter}"
+                counter += 1
+            self.slug = slug
+        if not self.task_key:
+            base_task_key = self.project.project_key.upper() if self.project.project_key else slugify(self.title)[:10]
+            slug = f"{base_task_key}-1"
+            counter = 1
+            while Task.objects.filter(task_key=slug).exists():
+                slug = f"{base_task_key[:45]}-{counter}"
+                counter += 1
+            self.task_key = slug
         super().save(*args, **kwargs)
+
 
     def __str__(self):
         return self.title
@@ -83,7 +100,7 @@ class Comment(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='comments')
     author = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='comments')
     text = models.TextField()
-    is_internal = models.BooleanField(default=False)  # Internal/private comment
+    is_internal = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

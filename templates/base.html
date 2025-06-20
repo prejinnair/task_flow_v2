@@ -70,14 +70,38 @@
                 <i data-feather="home" class="w-5 h-5"></i> Dashboard
             </a>
             <a href="{% url 'projects:project_list' %}" class="px-6 py-3 hover:bg-blue-50 hover:text-blue-600 flex items-center gap-3 {% if request.resolver_match.url_name == 'project_list' %} bg-blue-100 text-blue-700 font-semibold {% endif %}">
-                <i data-feather="briefcase" class="w-5 h-5"></i> Projects
+                <i data-feather="briefcase" class="w-5 h-5"></i> Manage Projects
             </a>
             <a href="{% url 'projects:team_list' %}" class="px-6 py-3 hover:bg-blue-50 hover:text-blue-600 flex items-center gap-3 {% if request.resolver_match.url_name == 'team_list' %} bg-blue-100 text-blue-700 font-semibold {% endif %}">
-                <i data-feather="layers" class="w-5 h-5"></i> Teams
+                <i data-feather="layers" class="w-5 h-5"></i> Manage Teams
             </a>
-            <a href="{% url 'tasks:task_list' %}" class="px-6 py-3 hover:bg-blue-50 hover:text-blue-600 flex items-center gap-3 {% if request.resolver_match.url_name == 'task_list' %} bg-blue-100 text-blue-700 font-semibold {% endif %}">
-                <i data-feather="check-square" class="w-5 h-5"></i> Tasks
-            </a>
+        <div x-data="{ open: {{ request.GET.project|yesno:'true,false' }} }" class="space-y-1">
+            <!-- Dropdown Button (Always says 'Project Tasks') -->
+            <button @click="open = !open"
+                class="w-full text-left px-6 py-3 flex items-center gap-3 hover:bg-blue-50 hover:text-blue-600 transition-all duration-150 {% if request.resolver_match.url_name == 'task_list' %} bg-blue-100 text-blue-700 font-semibold {% endif %}">
+                <i data-feather="check-square" class="w-5 h-5"></i>
+                <span class="flex-grow">Projects</span>
+                <svg :class="{ 'rotate-180': open }" class="w-4 h-4 transform transition-transform" xmlns="http://www.w3.org/2000/svg"
+                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+            </button>
+            <!-- Dropdown List -->
+            <div x-show="open" x-transition.duration.200ms x-cloak class="ml-8 border-l border-gray-200 pl-4">
+            {% for project in projects %}
+                {% with request.GET.urlencode as current_query %}
+                    {% with current_query|cut:"project="|cut:"&project=" as filtered_query %}
+                        <a href="{% url 'tasks:task_list' %}?project={{ project.id }}{% if filtered_query %}&{{ filtered_query }}{% endif %}"
+                        class="block py-2 text-sm text-gray-700 rounded hover:bg-blue-50 hover:text-blue-600 {% if request.GET.project == project.id|stringformat:'s' %} bg-blue-100 text-blue-700 font-semibold {% endif %}">
+                            {{ project.name }}
+                        </a>
+                    {% endwith %}
+                {% endwith %}
+            {% endfor %}
+
+            </div>
+        </div>
+
             {% if user.role == 4 %}
             <a href="{% url 'tasks:test_case_list' %}" class="px-6 py-3 hover:bg-blue-50 hover:text-blue-600 flex items-center gap-3 {% if request.resolver_match.url_name == 'test_case_list' %} bg-blue-100 text-blue-700 font-semibold {% endif %}">
                 <i data-feather="file-text" class="w-5 h-5"></i> Test Cases
@@ -98,7 +122,7 @@
                         {{ notifications_unread_count }}
                     </span>
                     {% endif %}
-            </a>
+                </a>
 
             <a href="{% url 'accounts:logout' %}" class="px-6 py-3 hover:bg-red-50 hover:text-red-600 flex items-center gap-3 text-red-600">
                 <i data-feather="log-out" class="w-5 h-5"></i> Logout

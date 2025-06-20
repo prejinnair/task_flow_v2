@@ -70,7 +70,7 @@ class ProjectForm(TailwindFormMixin, forms.ModelForm):
     class Meta:
         model = Project
         fields = [
-            'name', 'description', 'teams', 'managed_by', 'start_date',
+            'name', 'project_key', 'description', 'teams', 'managed_by', 'start_date',
             'end_date', 'deadline', 'status', 'priority', 'is_archived'
         ]
 

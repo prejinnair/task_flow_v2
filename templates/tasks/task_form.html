@@ -6,29 +6,64 @@
 
     <!-- Sticky Header -->
     <div class="px-6 py-4 border-b bg-gray-100 sticky top-0 z-10 flex justify-between items-center">
-      <h1 class="text-xl font-semibold text-gray-800">
-        {{ form.instance.pk|yesno:"Edit Task,Create Task" }}
-      </h1>
-      <a href="{% url 'tasks:task_list' %}" class="text-sm text-blue-600 hover:underline">← Back</a>
+    <h1 class="text-xl font-semibold text-gray-800">
+        {% if form.instance.pk %}
+                Edit {{ form.instance.get_type_display }}
+        {% else %}
+            {% if related_test_case %}
+                Create Bug: {{ related_test_case.title }}
+            {% else %}
+                Create Task
+            {% endif %}
+        {% endif %}
+    </h1>
+    <a href="{% url 'tasks:task_detail' pk=form.instance.pk %}"
+    class="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 rounded-md transition">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+        </svg>
+        Back to Task
+    </a>
     </div>
+
 
     <!-- Scrollable Form Body -->
     <div class="max-h-[70vh] overflow-y-auto px-6 py-6 space-y-6">
+      
+      <!-- Alert if coming from a failed test case -->
+      {% if related_test_case %}
+      <div class="bg-red-50 border-l-4 border-red-400 p-4 rounded">
+        <p class="text-sm text-red-700">
+          🐞 You are reporting a bug for <strong>Test Case: {{ related_test_case.title }}</strong>
+        </p>
+      </div>
+      {% endif %}
+
       <form method="post" enctype="multipart/form-data" class="space-y-5">
         {% csrf_token %}
+
+        <!-- Hidden fields if needed -->
+        {% if related_test_case %}
+        <input type="hidden" name="related_test_case" value="{{ related_test_case }}">
+        {% endif %}
+        {% if related_task %}
+        <input type="hidden" name="related_task" value="{{ related_task }}">
+        {% endif %}
+
         {% for field in form %}
-          <div>
-            <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
-              {{ field.label }}
-            </label>
-            {{ field }}
-            {% if field.help_text %}
-              <p class="text-xs text-gray-500 mt-1">{{ field.help_text }}</p>
-            {% endif %}
-            {% for error in field.errors %}
-              <p class="text-sm text-red-600 mt-1">{{ error }}</p>
-            {% endfor %}
-          </div>
+        <div>
+          <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+            {{ field.label }}
+          </label>
+          {{ field }}
+          {% if field.help_text %}
+          <p class="text-xs text-gray-500 mt-1">{{ field.help_text }}</p>
+          {% endif %}
+          {% for error in field.errors %}
+          <p class="text-sm text-red-600 mt-1">{{ error }}</p>
+          {% endfor %}
+        </div>
         {% endfor %}
 
         <!-- Attachment Upload -->
@@ -42,20 +77,19 @@
         <!-- Existing Attachments -->
         {% if form.instance.pk and form.instance.attachments.exists %}
         <div class="border-t pt-4">
-            <h3 class="text-sm font-semibold text-gray-800 mb-2">Existing Attachments:</h3>
-            <p class="text-sm text-gray-600 mb-2">Attachment count: {{ form.instance.attachments.count }}</p>
-            <ul class="list-disc pl-5 text-sm text-gray-700 space-y-1">
+          <h3 class="text-sm font-semibold text-gray-800 mb-2">Existing Attachments:</h3>
+          <p class="text-sm text-gray-600 mb-2">Attachment count: {{ form.instance.attachments.count }}</p>
+          <ul class="list-disc pl-5 text-sm text-gray-700 space-y-1">
             {% for attachment in form.instance.attachments.all %}
-                <li>
-                <a href="{{ attachment.file.url }}" target="_blank" class="text-blue-600 hover:underline">
-                    {{ attachment.file.name|default:"Unnamed File" }}
-                </a>
-                </li>
+            <li>
+              <a href="{{ attachment.file.url }}" target="_blank" class="text-blue-600 hover:underline">
+                {{ attachment.file.name|default:"Unnamed File" }}
+              </a>
+            </li>
             {% endfor %}
-            </ul>
+          </ul>
         </div>
         {% endif %}
-
 
         <!-- Submit Button -->
         <div class="pt-2">

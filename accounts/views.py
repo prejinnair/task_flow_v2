@@ -41,82 +41,6 @@ def check_role_developer(user):
     else:
         raise PermissionDenied
 
-# def register_user(request):
-#     if request.user.is_authenticated:
-#         messages.warning(request, 'You are already logged in.')
-#         return redirect('my-account')
-#     elif request.method == 'POST':
-#         form = UserForm(request.POST)
-#         if form.is_valid():
-#             password = form.cleaned_data['password']
-#             user = form.save(commit=False)
-#             user.role = User.CUSTOMER
-#             user.set_password(password)
-#             user.save()
-#             # send verification email
-#             subject = 'Activate your account'
-#             template = 'accounts/email/activate_email.html'
-#             send_verification_email(request, user, subject, template)
-#             messages.success(request, 'Your account has been created successfully')
-#             return redirect('register-user')
-#     else:
-#         form = UserForm()
-#     context = {
-#         'form': form
-#     }
-#     return render(request, 'accounts/register_user.html', context)
-
-# def register_vendor(request):
-#     if request.user.is_authenticated:
-#         messages.warning(request, 'You are already logged in.')
-#         return redirect('my-account')
-#     elif request.method == 'POST':
-#         form = UserForm(request.POST)
-#         vendor_form = VendorForm(request.POST, request.FILES)
-#         if form.is_valid() and vendor_form.is_valid():
-#             password = form.cleaned_data['password']
-#             user = form.save(commit=False)
-#             user.role = User.RESTAURANT
-#             user.set_password(password)
-#             user.save()
-#             user_profile = UserProfile.objects.get(user=user)
-#             vendor = vendor_form.save(commit=False)
-#             vendor.user = user
-#             vendor_name=vendor_form.cleaned_data['vendor_name']
-#             vendor.vendor_slug = f'{slugify(vendor_name)}-{user.id}'
-#             vendor.user_profile = user_profile
-#             vendor.save()
-#             # send verification email
-#             subject = 'Activate your account'
-#             template = 'accounts/email/activate_email.html'
-#             send_verification_email(request, user, subject, template)
-#             messages.success(request, 'Your account has been created successfully!, Please wait for the approval.')
-#             return redirect('register-vendor')
-#     else:
-#         form = UserForm()
-#         vendor_form = VendorForm
-#     context = {
-#         'form': form,
-#         'vendor_form': vendor_form
-#     }
-#     return render(request, 'accounts/register_vendor.html', context)
-
-# def activate(request, uidb64, token):
-#     # Activate the user by decoding the token and user pk
-#     try:
-#         uid = urlsafe_base64_decode(uidb64).decode()
-#         user = User._default_manager.get(pk=uid)
-#     except (TypeError, ValueError, OverflowError, User.DoesNotExist):
-#         user = None
-#     if user is not None and default_token_generator.check_token(user, token):
-#         user.is_active = True
-#         user.save()
-#         messages.success(request, 'Your account has been activated successfully! ')
-#         return redirect('accounts:my-account')
-#     else:
-#         messages.error(request, 'Invalid activation link')
-#         return redirect('accounts:my-account')
-
 
 def login(request):
     if request.user.is_authenticated:
@@ -202,11 +126,12 @@ def manager_dashboard(request):
         'team_count': related_teams.count(),
         'task_count': related_tasks.count(),
         'project_count': managed_projects.count(),
-        'tasks_completed_week': related_tasks.filter(status='done', updated_at__gte=week_ago).count(),
+        'tasks_completed': related_tasks.filter(status='done').count(),
         'recent_activities': activity_logs,
-        'recent_tasks': related_tasks.order_by('-created_at')[:5],
+        'recent_tasks': related_tasks.order_by('-created_at')[:10],
         'task_status_labels': json.dumps(list(status_data.keys()), cls=DjangoJSONEncoder),
         'task_status_counts': json.dumps(list(status_data.values()), cls=DjangoJSONEncoder),
+        'projects': managed_projects,
     }
     return render(request, 'accounts/manager_dashboard.html', context)
 
@@ -220,37 +145,32 @@ def qa_dashboard(request):
     qa_assigned_count = qa_tasks.count()
 
     bugs_assigned_count = Task.objects.filter(created_by=user, type='bug').count()
-    bugs_verified_count = Task.objects.filter(reviewed_by=user, type='bug').count()
-
-    pending_verifications_count = TestCase.objects.filter(
-        task__in=qa_tasks,
-        status__in=['not_tested', 'blocked']
-    ).count()
 
     failed_test_cases_count = TestCase.objects.filter(
-        task__in=qa_tasks,
         status='failed'
     ).count()
+    pending_verifications_count = TestCase.objects.filter(status__in=['pending', 'in_progress']).count()
 
-    uat_passed_count = Task.objects.filter(approved_by=user).count()
+    total_task_count = Task.objects.filter(status='done').count()
 
     recent_qa_tasks = Task.objects.filter(
-        Q(created_by=user) | Q(reviewed_by=user)
+        Q(created_by=user) | Q(testing_assigned_to=user), type='bug'
     ).order_by('-updated_at')[:10]
 
     activity_logs = ActivityLog.objects.filter(
         user=user
-    ).order_by('-created_at')[:10]
+    ).order_by('-created_at')[:5]
 
     context = {
         'qa_assigned_count': qa_assigned_count,
         'bugs_assigned_count': bugs_assigned_count,
-        'bugs_verified_count': bugs_verified_count,
-        'pending_verifications_count': pending_verifications_count,
         'failed_test_cases_count': failed_test_cases_count,
-        'uat_passed_count': uat_passed_count,
+        'uat_passed_count': total_task_count,
         'recent_qa_tasks': recent_qa_tasks,
         'activity_logs': activity_logs,
+        'projects': Project.objects.filter(teams__in=user.teams.all()).distinct(),
+        'in_progress_count': qa_tasks.filter(status='testing').count(),
+        'pending_verifications_count': pending_verifications_count,
     }
 
     return render(request, 'accounts/qa_dashboard.html', context)
@@ -282,6 +202,7 @@ def developer_dashboard(request):
         'recent_tasks': assigned_tasks.order_by('-updated_at')[:5],
         'upcoming_tasks': upcoming_tasks,
         'activity_logs': ActivityLog.objects.filter(user=user).order_by('-created_at')[:5],
+        'projects': Project.objects.filter(teams__in=user.teams.all()).distinct(),
     }
 
     return render(request, 'accounts/developer_dashboard.html', context)

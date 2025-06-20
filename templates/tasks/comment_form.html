@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto mt-10 bg-white p-8 rounded-lg shadow-md">
+    <h2 class="text-2xl font-semibold mb-6 text-gray-800">
+        {{ task.title }} - {% if form.instance.pk %}Edit{% else %}Add{% endif %} Comment
+    </h2>
+
+    <form method="post" class="space-y-6">
+        {% csrf_token %}
+
+        <div>
+            <label for="id_text" class="block text-sm font-medium text-gray-700">Comment</label>
+            <textarea
+                id="id_text"
+                name="text"
+                rows="4"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm text-gray-800"
+            >{{ form.text.value|default_if_none:'' }}</textarea>
+        </div>
+
+        <div class="flex items-center">
+            {{ form.is_internal }}
+            <label for="id_is_internal" class="ml-2 text-sm text-gray-700">Internal (visible only to team)</label>
+        </div>
+
+        <div class="flex justify-between items-center">
+            <button type="submit"
+                class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                Save
+            </button>
+            <a href="{% url 'tasks:task_detail' pk=task.pk %}"
+                class="text-sm text-gray-600 hover:underline">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

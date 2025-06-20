@@ -7,7 +7,7 @@
     <!-- Header -->
     <div class="px-6 py-5 border-b bg-gradient-to-r from-blue-50 to-blue-100 flex items-center justify-between flex-shrink-0">
       <div>
-        <h1 class="text-3xl font-extrabold text-gray-800">{{ task.title }}</h1>
+        <h1 class="text-3xl font-extrabold text-gray-800">{{task.get_type_display}}: {{ task.title }}</h1>
         <p class="text-sm text-gray-500 mt-1">Created on {{ task.created_at|date:"M d, Y H:i" }} by {{ task.created_by }}</p>
       </div>
       <div class="flex flex-wrap gap-2">
@@ -34,7 +34,7 @@
 <section>
     {% if task.parent %}
 
-  <h2 class="text-lg font-semibold text-gray-700 mb-2">🔗 Task Hierarchy</h2>
+  <h2 class="text-lg font-semibold text-gray-700 mb-2">🔗 Parent Task</h2>
   <!-- Parent Task -->
     <p class="mb-1 text-sm">
       <strong>Parent Task:</strong>
@@ -136,16 +136,15 @@
             <p class="text-xs text-gray-500">{{ comment.created_at|date:"M d, Y H:i" }}</p>
           </div>
           <p class="text-gray-700 text-sm">{{ comment.text }}</p>
+        {% if comment.author == user %}
+            <a href="{% url 'tasks:edit_comment' pk=comment.pk %}" >Edit</a> |
+            <a href="{% url 'tasks:delete_comment' pk=comment.pk %}">Delete</a>
+        {% endif %}
         </div>
         {% empty %}
         <p class="text-sm text-gray-500">No comments yet.</p>
         {% endfor %}
-
-        <form method="post" class="mt-4 space-y-2">
-          {% csrf_token %}
-          {{ comment_form.as_p }}
-          <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm">Add Comment</button>
-        </form>
+          <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm"><a href="{% url 'tasks:add_comment' task_id=task.pk %}">Add Comment</a></button>
       </div>
 
       <!-- Test Cases -->
@@ -180,6 +179,12 @@
             <p class="text-sm mt-2"><strong>Status:</strong> {{ test_case.get_status_display }}</p>
             {% endif %}
             </div>
+        {% if test_case.status == 'failed' %}
+            <a href="{% url 'tasks:task_create' %}?related_test_case={{ test_case.id }}&related_task={{ task.id }}"
+            class="inline-block mt-2 text-sm bg-red-100 text-red-700 px-3 py-1 rounded hover:bg-red-200">
+                🐞 Report Bug
+            </a>
+        {% endif %}
 
             <div class="flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0 ml-4 mt-1 sm:mt-0">
             <a href="{% url 'tasks:test_case_detail' test_case.pk %}"

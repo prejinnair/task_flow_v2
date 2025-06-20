@@ -22,8 +22,8 @@
         </div>
 
         <div class="bg-white shadow rounded-xl p-5">
-            <p class="text-gray-500">Tasks Completed (This Week)</p>
-            <p class="text-2xl font-bold text-emerald-600">{{ tasks_completed_week }}</p>
+            <p class="text-gray-500">Tasks Completed</p>
+            <p class="text-2xl font-bold text-emerald-600">{{ tasks_completed }}</p>
         </div>
     </div>
 
@@ -70,39 +70,53 @@
     </div>
 
     <!-- Recent Tasks -->
-    <div class="bg-white shadow rounded-xl p-6">
-        <h2 class="text-xl font-semibold text-gray-800 mb-4">Recent Tasks</h2>
-        <div class="max-h-96 overflow-y-auto pr-2">
-            <ul class="divide-y divide-gray-100">
+<!-- Recent Tasks Table -->
+<div class="bg-white shadow rounded-xl p-6">
+    <h2 class="text-xl font-semibold text-gray-800 mb-4">Recent Tasks</h2>
+    <div class="overflow-x-auto max-h-[30rem]">
+        <table class="min-w-full divide-y divide-gray-200 text-sm">
+            <thead class="bg-gray-50 sticky top-0 z-10">
+                <tr>
+                    <th class="px-4 py-3 text-left font-semibold text-gray-700">Title</th>
+                    <th class="px-4 py-3 text-left font-semibold text-gray-700">Status</th>
+                    <th class="px-4 py-3 text-left font-semibold text-gray-700">Due Date</th>
+                    <th class="px-4 py-3 text-left font-semibold text-gray-700">Assigned To</th>
+                    <th class="px-4 py-3 text-left font-semibold text-gray-700">Project</th>
+                    <th class="px-4 py-3 text-left font-semibold text-gray-700">Est. Hours</th>
+                    <th class="px-4 py-3 text-left font-semibold text-gray-700">Actual Hours</th>
+                    <th class="px-4 py-3 text-left font-semibold text-gray-700">Action</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-100">
                 {% for task in recent_tasks %}
-                <li class="py-4">
-                    <div class="flex justify-between items-start">
-                        <div class="space-y-1">
-                            <p class="text-base font-semibold text-gray-900">{{ task.title }}</p>
-                            <p class="text-sm text-gray-700">
-                                <span class="font-medium">Status:</span> {{ task.get_status_display }} |
-                                <span class="font-medium">Due:</span> {{ task.due_date|date:"M d, Y" }}
-                            </p>
-                            <p class="text-sm text-gray-700">
-                                <span class="font-medium">Assigned To:</span> {{ task.assigned_to.username }}
-                            </p>
-                            <p class="text-sm text-gray-700">
-                                <span class="font-medium">Project:</span> {{ task.project.name }}
-                            </p>
-                            <p class="text-sm text-gray-700">
-                                <span class="font-medium">Est. Hours:</span> {{ task.estimated_hours }} |
-                                <span class="font-medium">Actual Hours:</span> {{ task.actual_hours }}
-                            </p>
-                        </div>
-                        <a href="{% url 'tasks:task_detail' task.id %}" class="text-blue-600 hover:underline text-sm mt-2">🔍 View</a>
-                    </div>
-                </li>
+                <tr>
+                    <td class="px-4 py-3 text-gray-900 font-medium">{{task.get_type_display}}: {{ task.title }}</td>
+                    <td class="px-4 py-3 text-gray-700">{{ task.get_status_display }}</td>
+                    <td class="px-4 py-3 text-gray-700">{{ task.due_date|date:"M d, Y" }}</td>
+                    <td class="px-4 py-3 text-gray-700">{{ task.assigned_to.username }}</td>
+                    <td class="px-4 py-3 text-gray-700">{{ task.project.name }}</td>
+                    <td class="px-4 py-3 text-gray-700">{{ task.estimated_hours }}</td>
+                    <td class="px-4 py-3 text-gray-700">
+                        {% if task.status == 'done' %}
+                            {{ task.actual_hours }}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-3">
+                        <a href="{% url 'tasks:task_detail' task.id %}" class="text-blue-600 hover:underline">🔍 View</a>
+                    </td>
+                </tr>
                 {% empty %}
-                <li class="py-4 text-gray-500">No recent tasks found.</li>
+                <tr>
+                    <td colspan="8" class="px-4 py-4 text-center text-gray-500">No recent tasks found.</td>
+                </tr>
                 {% endfor %}
-            </ul>
-        </div>
+            </tbody>
+        </table>
     </div>
+</div>
+
 </div>
 
 <!-- Chart JS Script -->

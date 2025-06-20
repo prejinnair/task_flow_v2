@@ -12,8 +12,10 @@ urlpatterns = [
     path('tasks/update-ajax/', views.task_update_ajax, name='task_update_ajax'),
 
     # Comment CRUD (handled inside task detail usually)
-    path('<int:task_id>/comment/add/', views.add_comment, name='comment_create'),
-
+    path('<int:task_id>/comment/add/', views.add_comment, name='add_comment'),
+    path('comment/<int:pk>/edit/', views.edit_comment, name='edit_comment'),
+    path('comment/<int:pk>/delete/', views.delete_comment, name='delete_comment'),
+    
     # Label CRUD
     path('labels/', views.label_list, name='label_list'),
     path('labels/create/', views.label_create, name='label_create'),

@@ -71,6 +71,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'notifications.context_processors.unread_notifications_count',
+                'accounts.context_processors.get_projects',
 
             ],
         },
@@ -150,3 +151,5 @@ MEDIA_ROOT = BASE_DIR/'media'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+TEAMS_WEBHOOK_URL = config('TEAMS_WEBHOOK_URL', default=None)
